@@ -71,7 +71,7 @@ export default function Dashboard() {
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-sm text-indigo-400 font-medium">
               <Sparkles size={16} />
-              {user ? `Welcome back, ${user.full_name?.split(' ')[0]}!` : 'Welcome to CareerSync AI'}
+              {user ? `Welcome back, ${user.full_name?.split(' ')[0]}!` : 'Welcome to IntelliHire AI'}
             </div>
             <h1 className="text-4xl md:text-5xl font-extrabold leading-tight">
               Master Your Next <br />

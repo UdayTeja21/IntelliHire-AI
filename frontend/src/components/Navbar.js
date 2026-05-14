@@ -33,7 +33,7 @@ export default function Navbar() {
               <BrainCircuit size={18} className="text-white" />
             </div>
             <span className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400">
-              CareerSync AI
+              IntelliHire AI
             </span>
           </Link>
 

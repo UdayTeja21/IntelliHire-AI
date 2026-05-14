@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings
 from typing import Optional
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "CareerSync AI"
+    PROJECT_NAME: str = "IntelliHire AI"
     API_V1_STR: str = "/api/v1"
     
     SECRET_KEY: str = "supersecretkey"  # Change in production

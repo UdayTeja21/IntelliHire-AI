@@ -4,7 +4,7 @@ import Navbar from '../components/Navbar';
 import { ToastProvider } from '../components/Toast';
 
 export const metadata = {
-  title: 'CareerSync AI — AI-Powered Interview & Resume Platform',
+  title: 'IntelliHire AI — AI-Powered Interview & Resume Platform',
   description: 'Master your next interview with AI-powered mock sessions and ATS resume analysis.',
 };
 

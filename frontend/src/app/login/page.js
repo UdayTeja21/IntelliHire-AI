@@ -38,7 +38,7 @@ export default function Login() {
       toast({
         type: 'success',
         title: `Welcome back, ${response.data.user.full_name?.split(' ')[0]}! 👋`,
-        message: 'You have successfully signed in to CareerSync AI.',
+        message: 'You have successfully signed in to IntelliHire AI.',
       });
       router.push('/');
     } catch (error) {
