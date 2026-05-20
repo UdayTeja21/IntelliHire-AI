@@ -4,14 +4,29 @@ from fastapi.security import OAuth2PasswordRequestForm
 from app.db.database import get_db
 from app.db import models
 from app.core.security import verify_password, get_password_hash, create_access_token
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
+from typing import Any
+import re
 
 router = APIRouter()
 
 class UserCreate(BaseModel):
-    email: EmailStr
+    email: str
     password: str
     full_name: str
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate_email
+
+    @classmethod
+    def validate_email(cls, value: Any) -> str:
+        if not isinstance(value, str):
+            raise TypeError('email must be a string')
+        value = value.strip()
+        if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", value):
+            raise ValueError('invalid email address')
+        return value
 
 class Token(BaseModel):
     access_token: str

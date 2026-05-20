@@ -41,7 +41,8 @@ def extract_text_from_pdf(file_bytes: bytes) -> str:
         pdf_reader = PyPDF2.PdfReader(io.BytesIO(file_bytes))
         text = ""
         for page in pdf_reader.pages:
-            text += page.extract_text() + "\n"
+            page_text = page.extract_text() or ""
+            text += page_text + "\n"
         return text.strip()
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Could not read PDF: {str(e)}")
@@ -76,6 +77,10 @@ async def analyze_resume_text(
         content_text=text,
         target_role=target_role,
         ats_score=result.get("atsScore", 0),
+        recruiter_score=result.get("recruiterScore", 0),
+        technical_strength_score=result.get("technicalStrengthScore", 0),
+        project_quality_score=result.get("projectQualityScore", 0),
+        hiring_probability=result.get("hiringProbability", 0),
         analysis_json=json.dumps(result)
     )
     db.add(resume)
@@ -99,6 +104,10 @@ def get_resume_history(
             "id": r.id,
             "target_role": r.target_role,
             "ats_score": r.ats_score,
+            "recruiter_score": r.recruiter_score,
+            "technical_strength_score": r.technical_strength_score,
+            "project_quality_score": r.project_quality_score,
+            "hiring_probability": r.hiring_probability,
             "created_at": r.created_at.isoformat()
         }
         for r in resumes
@@ -197,6 +206,126 @@ def get_me(current_user: models.User = Depends(get_current_user)):
         "full_name": current_user.full_name
     }
 
+@router.get("/interview/{session_id}/report")
+def generate_interview_report(
+    session_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    session = db.query(models.InterviewSession).filter(
+        models.InterviewSession.id == session_id,
+        models.InterviewSession.user_id == current_user.id
+    ).first()
+    
+    if not session:
+        raise HTTPException(status_code=404, detail="Interview session not found")
+    
+    questions = db.query(models.InterviewQuestion).filter(
+        models.InterviewQuestion.session_id == session_id
+    ).order_by(models.InterviewQuestion.id).all()
+    
+    q_data = []
+    total_score = 0
+    answered_count = 0
+    
+    for q in questions:
+        if q.score:
+            total_score += q.score
+            answered_count += 1
+        
+        evaluation = json.loads(q.feedback_json) if q.feedback_json else {}
+        
+        q_data.append({
+            "question": q.question_text,
+            "category": q.category,
+            "answer": q.candidate_answer,
+            "score": q.score,
+            "evaluation": evaluation
+        })
+    
+    avg_score = total_score / answered_count if answered_count > 0 else 0
+    
+    report = {
+        "user_info": {
+            "name": current_user.full_name,
+            "email": current_user.email
+        },
+        "interview_info": {
+            "role": session.role,
+            "type": session.type,
+            "difficulty": session.difficulty,
+            "created_at": session.created_at.isoformat(),
+            "overall_score": session.overall_score
+        },
+        "performance": {
+            "average_score": round(avg_score, 1),
+            "questions_answered": answered_count,
+            "total_questions": len(questions),
+            "completion_rate": round((answered_count / len(questions)) * 100, 1) if questions else 0
+        },
+        "questions": q_data,
+        "strengths": [],
+        "weaknesses": [],
+        "recommendations": []
+    }
+    
+    # Aggregate strengths and weaknesses
+    all_strengths = []
+    all_weaknesses = []
+    
+    for q in q_data:
+        if q["evaluation"]:
+            all_strengths.extend(q["evaluation"].get("strengths", []))
+            all_weaknesses.extend(q["evaluation"].get("weaknesses", []))
+    
+    # Get most common
+    from collections import Counter
+    report["strengths"] = [item for item, count in Counter(all_strengths).most_common(3)]
+    report["weaknesses"] = [item for item, count in Counter(all_weaknesses).most_common(3)]
+    report["recommendations"] = ["Practice more technical questions", "Work on communication clarity", "Focus on problem-solving approach"]
+    
+    return report
+
+@router.get("/resume/{resume_id}/report")
+def generate_resume_report(
+    resume_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    resume = db.query(models.Resume).filter(
+        models.Resume.id == resume_id,
+        models.Resume.user_id == current_user.id
+    ).first()
+    
+    if not resume:
+        raise HTTPException(status_code=404, detail="Resume not found")
+    
+    analysis = json.loads(resume.analysis_json) if resume.analysis_json else {}
+    
+    # Generate comprehensive report
+    report = {
+        "user_info": {
+            "name": current_user.full_name,
+            "email": current_user.email
+        },
+        "resume_info": {
+            "target_role": resume.target_role,
+            "created_at": resume.created_at.isoformat(),
+            "word_count": len(resume.content_text.split())
+        },
+        "scores": {
+            "ats_score": resume.ats_score,
+            "recruiter_score": resume.recruiter_score,
+            "technical_strength": resume.technical_strength_score,
+            "project_quality": resume.project_quality_score,
+            "hiring_probability": resume.hiring_probability
+        },
+        "analysis": analysis,
+        "recommendations": analysis.get("improvementRoadmap", []),
+        "learning_path": analysis.get("learningPath", [])
+    }
+    
+    return report
 @router.get("/user/stats")
 def get_user_stats(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     # Interviews completed
@@ -219,11 +348,28 @@ def get_user_stats(db: Session = Depends(get_db), current_user: models.User = De
         ).filter(models.InterviewSession.user_id == current_user.id).scalar()
         avg_interview = avg_q_score if avg_q_score else 0
 
-    # Avg ATS Score
+    # Avg Technical Strength Score
+    avg_technical = db.query(func.avg(models.Resume.technical_strength_score)).filter(
+        models.Resume.user_id == current_user.id
+    ).scalar()
+    avg_technical = avg_technical if avg_technical else 0
+
     avg_ats = db.query(func.avg(models.Resume.ats_score)).filter(
         models.Resume.user_id == current_user.id
     ).scalar()
     avg_ats = avg_ats if avg_ats else 0
+
+    # Avg Project Quality Score
+    avg_project = db.query(func.avg(models.Resume.project_quality_score)).filter(
+        models.Resume.user_id == current_user.id
+    ).scalar()
+    avg_project = avg_project if avg_project else 0
+
+    # Avg Hiring Probability
+    avg_hiring = db.query(func.avg(models.Resume.hiring_probability)).filter(
+        models.Resume.user_id == current_user.id
+    ).scalar()
+    avg_hiring = avg_hiring if avg_hiring else 0
 
     import datetime
     from datetime import timedelta
@@ -271,24 +417,61 @@ def get_user_stats(db: Session = Depends(get_db), current_user: models.User = De
             {"day": "Thu", "score": base}, {"day": "Fri", "score": base}, {"day": "Sat", "score": base}, {"day": "Sun", "score": base}
         ]
 
-    # Radar Data (Skills breakdown)
-    # We can aggregate from questions if categories exist, else mock based on overall score
+    # Radar Data (Skills breakdown) - Enhanced
     base_score = int(avg_interview)
     radar_data = [
-        {"skill": "Technical", "A": max(0, base_score + 5) if base_score else 0},
+        {"skill": "Technical", "A": max(0, int(avg_technical))},
         {"skill": "Communication", "A": base_score if base_score else 0},
         {"skill": "Problem Solving", "A": max(0, base_score + 2) if base_score else 0},
-        {"skill": "Behavioral", "A": max(0, base_score - 5) if base_score else 0},
-        {"skill": "HR Readiness", "A": max(0, base_score - 2) if base_score else 0},
+        {"skill": "Project Quality", "A": max(0, int(avg_project))},
+        {"skill": "Hiring Readiness", "A": max(0, int(avg_hiring))},
     ]
+
+    # Additional analytics data
+    technical_trend = []
+    project_trend = []
+    hiring_trend = []
+    
+    # Get last 7 days data for trends
+    today = datetime.datetime.now(datetime.timezone.utc).date()
+    for i in range(6, -1, -1):
+        target_date = today - timedelta(days=i)
+        day_str = target_date.strftime("%a")
+        
+        # Technical scores for the day
+        day_technical = db.query(func.avg(models.Resume.technical_strength_score)).filter(
+            models.Resume.user_id == current_user.id,
+            func.date(models.Resume.created_at) == target_date
+        ).scalar()
+        technical_trend.append({"day": day_str, "score": int(day_technical) if day_technical else 0})
+        
+        # Project scores for the day
+        day_project = db.query(func.avg(models.Resume.project_quality_score)).filter(
+            models.Resume.user_id == current_user.id,
+            func.date(models.Resume.created_at) == target_date
+        ).scalar()
+        project_trend.append({"day": day_str, "score": int(day_project) if day_project else 0})
+        
+        # Hiring probability for the day
+        day_hiring = db.query(func.avg(models.Resume.hiring_probability)).filter(
+            models.Resume.user_id == current_user.id,
+            func.date(models.Resume.created_at) == target_date
+        ).scalar()
+        hiring_trend.append({"day": day_str, "score": int(day_hiring) if day_hiring else 0})
 
     return {
         "avg_interview_score": round(avg_interview),
         "interviews_completed": interviews_count,
         "practice_hours": practice_hours,
         "avg_ats_score": round(avg_ats),
+        "avg_technical_score": round(avg_technical),
+        "avg_project_score": round(avg_project),
+        "avg_hiring_probability": round(avg_hiring),
         "lineData": line_data,
         "radarData": radar_data,
+        "technicalTrend": technical_trend,
+        "projectTrend": project_trend,
+        "hiringTrend": hiring_trend,
         "recentInterviews": recent_interviews
     }
 

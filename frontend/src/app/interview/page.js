@@ -1,7 +1,7 @@
 "use client";
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Settings, PlayCircle, Bot, User, Mic, CheckCircle, AlertCircle, ChevronRight, BarChart2, FileText } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { BarChart2, Bot, CheckCircle, Mic, PlayCircle, Settings, User, Download } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import api from '../../lib/api';
 
 // ─── Silence-detection config ────────────────────────────────────────────────
@@ -355,6 +355,71 @@ export default function Interview() {
       ? Math.round(results.reduce((a, c) => a + c.evaluation.score, 0) / results.length)
       : 0;
 
+    const downloadInterviewReport = async () => {
+      try {
+        const response = await api.get(`/interview/${session.session_id}/report`);
+        const reportData = response.data;
+        
+        let report = `INTELLIHIRE AI - INTERVIEW ANALYSIS REPORT\n`;
+        report += `=============================================\n\n`;
+        report += `Generated on: ${new Date().toLocaleString()}\n`;
+        report += `Role: ${config.role}\n`;
+        report += `Type: ${config.type}\n`;
+        report += `Difficulty: ${config.difficulty}\n\n`;
+        
+        report += `PERFORMANCE SUMMARY:\n`;
+        report += `--------------------\n`;
+        report += `Average Score: ${avgScore}/100\n`;
+        report += `Questions Answered: ${results.length}\n`;
+        report += `Completion Rate: ${Math.round((results.length / session.questions.length) * 100)}%\n\n`;
+        
+        report += `QUESTION-BY-QUESTION ANALYSIS:\n`;
+        report += `-------------------------------\n`;
+        results.forEach((r, i) => {
+          report += `Q${i + 1}: ${r.question.question}\n`;
+          report += `Your Score: ${r.evaluation.score}/100\n`;
+          report += `Feedback: ${r.evaluation.feedback}\n`;
+          if (r.evaluation.strengths?.length) {
+            report += `Strengths: ${r.evaluation.strengths.join(', ')}\n`;
+          }
+          if (r.evaluation.weaknesses?.length) {
+            report += `Areas for Improvement: ${r.evaluation.weaknesses.join(', ')}\n`;
+          }
+          report += `\n`;
+        });
+        
+        if (reportData.strengths?.length) {
+          report += `OVERALL STRENGTHS:\n`;
+          report += `-------------------\n`;
+          reportData.strengths.forEach(strength => report += `• ${strength}\n`);
+          report += `\n`;
+        }
+        
+        if (reportData.weaknesses?.length) {
+          report += `AREAS FOR IMPROVEMENT:\n`;
+          report += `-----------------------\n`;
+          reportData.weaknesses.forEach(weakness => report += `• ${weakness}\n`);
+          report += `\n`;
+        }
+        
+        report += `RECOMMENDATIONS:\n`;
+        report += `-----------------\n`;
+        reportData.recommendations.forEach(rec => report += `• ${rec}\n`);
+        
+        const blob = new Blob([report], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `IntelliHire_Interview_Report_${config.role.replace(/\s+/g, '_')}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        console.error('Failed to download report:', err);
+      }
+    };
+
     return (
       <div className="ih-page fade-in">
         <div className="ih-results-hero">
@@ -365,8 +430,8 @@ export default function Interview() {
           <h1 className="ih-results-title">Interview Complete</h1>
           <p className="ih-results-sub">{config.role} · {config.type} · {config.difficulty}</p>
           <div className="ih-results-actions">
-            <button onClick={() => window.print()} className="ih-start-btn" style={{ gap: '0.5rem', padding: '0.7rem 1.4rem', fontSize: '0.9rem' }}>
-              <FileText size={18} /> Download Report
+            <button onClick={downloadInterviewReport} className="ih-start-btn" style={{ gap: '0.5rem', padding: '0.7rem 1.4rem', fontSize: '0.9rem' }}>
+              <Download size={18} /> Download Report
             </button>
             <button onClick={() => { setSession(null); setResults([]); setCurrentIndex(0); }} className="ih-ghost-btn">
               New Interview
@@ -399,6 +464,28 @@ export default function Interview() {
                 <div className="ih-feedback-block">
                   <p className="ih-block-label">AI Feedback</p>
                   <p className="ih-block-text">{r.evaluation.feedback}</p>
+                  {r.evaluation.strengths?.length > 0 && (
+                    <div style={{ marginTop: 12 }}>
+                      <p className="ih-block-label" style={{ fontSize: '0.8rem', color: '#10b981' }}>✓ Strengths</p>
+                      <ul style={{ fontSize: '0.85rem', color: '#94a3b8', marginTop: 4 }}>
+                        {r.evaluation.strengths.map((s, i) => <li key={i}>• {s}</li>)}
+                      </ul>
+                    </div>
+                  )}
+                  {r.evaluation.weaknesses?.length > 0 && (
+                    <div style={{ marginTop: 12 }}>
+                      <p className="ih-block-label" style={{ fontSize: '0.8rem', color: '#f59e0b' }}>⚠️ Areas for Improvement</p>
+                      <ul style={{ fontSize: '0.85rem', color: '#94a3b8', marginTop: 4 }}>
+                        {r.evaluation.weaknesses.map((w, i) => <li key={i}>• {w}</li>)}
+                      </ul>
+                    </div>
+                  )}
+                  {r.evaluation.suggestedAnswer && (
+                    <div style={{ marginTop: 12 }}>
+                      <p className="ih-block-label" style={{ fontSize: '0.8rem', color: '#6366f1' }}>💡 Suggested Better Answer</p>
+                      <p style={{ fontSize: '0.85rem', color: '#cbd5e1', marginTop: 4, fontStyle: 'italic' }}>{r.evaluation.suggestedAnswer}</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </motion.div>

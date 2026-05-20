@@ -1,12 +1,13 @@
 import google.generativeai as genai
 from app.core.config import settings
 import json, re
+import random
 
 if settings.GEMINI_API_KEY:
     genai.configure(api_key=settings.GEMINI_API_KEY)
 
 def get_model():
-    return genai.GenerativeModel('gemini-1.5-pro')
+    model = genai.GenerativeModel("gemini-2.0-flash")
 
 def safe_json(text: str):
     try:
@@ -348,7 +349,7 @@ def _dynamic_fallback_analysis(resume_text: str, role: str) -> dict:
             {"skill": kw, "reason": "Required for role", "resources": [], "priority": "High"} for kw in missing_keywords[:2]
         ]
     }
-import random
+
 
 def _generate_dynamic_fallback_questions(role: str, type: str, difficulty: str, count: int, resume_context: str) -> list:
     questions = []

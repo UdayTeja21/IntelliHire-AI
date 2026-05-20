@@ -1,16 +1,16 @@
 "use client";
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Briefcase, FilePlus, FileText, RefreshCw, X, Zap, Download } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../context/AuthContext';
-import api from '../../lib/api';
-import { FileText, FilePlus, X, RefreshCw, Zap, Upload, Briefcase } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import ImprovementPlan from '../../components/resume/ImprovementPlan';
+import ProjectAnalysis from '../../components/resume/ProjectAnalysis';
+import RecruiterView from '../../components/resume/RecruiterView';
 import ScoreOverview from '../../components/resume/ScoreOverview';
 import SectionAnalysis from '../../components/resume/SectionAnalysis';
-import ProjectAnalysis from '../../components/resume/ProjectAnalysis';
 import SkillAnalysis from '../../components/resume/SkillAnalysis';
-import RecruiterView from '../../components/resume/RecruiterView';
-import ImprovementPlan from '../../components/resume/ImprovementPlan';
+import { useAuth } from '../../context/AuthContext';
+import api from '../../lib/api';
 
 const ROLES = ['Software Engineer','Frontend Developer','Backend Developer','Full Stack Developer','Data Scientist','AI/ML Engineer','DevOps Engineer','Product Manager','UI/UX Designer','Data Analyst'];
 const TABS = ['Overview','Sections','Projects','Skills','Recruiter View','Improvement Plan'];
@@ -64,6 +64,68 @@ export default function ResumeAnalyzer() {
   const [activeTab, setActiveTab] = useState(0);
   const [lastUpdated, setLastUpdated] = useState('');
   const [localStats, setLocalStats] = useState({ words: 0, keywords: 0, totalKeywords: 0 });
+
+  const downloadReport = async () => {
+    if (!result || !result.resume_id) return;
+    try {
+      const response = await api.get(`/resume/${result.resume_id}/report`);
+      const reportData = response.data;
+      
+      // Create a comprehensive text report
+      let report = `INTELLIHIRE AI - RESUME ANALYSIS REPORT\n`;
+      report += `========================================\n\n`;
+      report += `Generated on: ${new Date().toLocaleString()}\n`;
+      report += `Target Role: ${targetRole}\n\n`;
+      
+      report += `SCORES SUMMARY:\n`;
+      report += `---------------\n`;
+      report += `ATS Score: ${result.atsScore}/100\n`;
+      report += `Recruiter Score: ${result.recruiterScore}/100\n`;
+      report += `Technical Strength: ${result.technicalStrengthScore}/100\n`;
+      report += `Project Quality: ${result.projectQualityScore}/100\n`;
+      report += `Hiring Probability: ${result.hiringProbability}/100\n\n`;
+      
+      report += `OVERALL VERDICT:\n`;
+      report += `${result.overallVerdict}\n\n`;
+      
+      report += `RECRUITER FIRST IMPRESSION:\n`;
+      report += `"${result.recruiterFirstImpression}"\n\n`;
+      
+      if (result.sectionAnalysis) {
+        report += `SECTION ANALYSIS:\n`;
+        report += `-----------------\n`;
+        Object.entries(result.sectionAnalysis).forEach(([section, data]) => {
+          report += `${section.toUpperCase()}: ${data.score}/100\n`;
+          if (data.strengths?.length) report += `  Strengths: ${data.strengths.join(', ')}\n`;
+          if (data.weaknesses?.length) report += `  Weaknesses: ${data.weaknesses.join(', ')}\n`;
+          if (data.suggestions?.length) report += `  Suggestions: ${data.suggestions.join(', ')}\n`;
+          report += `\n`;
+        });
+      }
+      
+      if (result.improvementRoadmap?.length) {
+        report += `IMPROVEMENT ROADMAP:\n`;
+        report += `--------------------\n`;
+        result.improvementRoadmap.forEach(item => {
+          report += `• ${item.priority}: ${item.action} (${item.timeToComplete})\n`;
+          report += `  Impact: ${item.impact}\n\n`;
+        });
+      }
+      
+      // Download as text file
+      const blob = new Blob([report], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `IntelliHire_Resume_Report_${targetRole.replace(/\s+/g, '_')}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Failed to download report:', err);
+    }
+  };
 
   // Instant local analysis as you type
   useEffect(() => {
@@ -322,6 +384,13 @@ export default function ResumeAnalyzer() {
                       boxShadow: activeTab === i ? '0 4px 15px rgba(99,102,241,0.3)' : 'none',
                     }}>{tab}</button>
                   ))}
+                  <button onClick={downloadReport} style={{
+                    padding: '8px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: 'none', whiteSpace: 'nowrap', transition: 'all 0.2s',
+                    background: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)',
+                    display: 'flex', alignItems: 'center', gap: 6
+                  }}>
+                    <Download size={14} /> Download Report
+                  </button>
                   {isAnalyzing && <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', borderRadius: 10, background: 'rgba(99,102,241,0.1)', fontSize: 12, color: '#818cf8', fontWeight: 600, whiteSpace: 'nowrap' }}>
                     <RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Re-analyzing...
                   </div>}

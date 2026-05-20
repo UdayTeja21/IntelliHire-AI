@@ -18,6 +18,10 @@ class Resume(Base):
     content_text = Column(Text)
     target_role = Column(String)
     ats_score = Column(Float)
+    recruiter_score = Column(Float, nullable=True)
+    technical_strength_score = Column(Float, nullable=True)
+    project_quality_score = Column(Float, nullable=True)
+    hiring_probability = Column(Float, nullable=True)
     analysis_json = Column(Text) # Store JSON of strengths/weaknesses
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     

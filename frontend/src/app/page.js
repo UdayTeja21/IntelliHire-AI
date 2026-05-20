@@ -1,11 +1,11 @@
 "use client";
-import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { ArrowRight, Award, ChevronRight, Clock, FileText, Mic, Sparkles, Target, TrendingUp, Zap } from 'lucide-react';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { Area, AreaChart, CartesianGrid, Line, LineChart, PolarAngleAxis, PolarGrid, Radar, RadarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, RadarChart, PolarGrid, PolarAngleAxis, Radar } from 'recharts';
-import { Target, TrendingUp, Clock, Award, ArrowRight, FileText, Mic, Sparkles, ChevronRight } from 'lucide-react';
 
 // Data is now fetched dynamically from the backend
 
@@ -37,8 +37,14 @@ export default function Dashboard() {
     interviews_completed: 0,
     practice_hours: 0,
     avg_ats_score: 0,
+    avg_technical_score: 0,
+    avg_project_score: 0,
+    avg_hiring_probability: 0,
     lineData: [],
     radarData: [],
+    technicalTrend: [],
+    projectTrend: [],
+    hiringTrend: [],
     recentInterviews: []
   });
 
@@ -98,6 +104,10 @@ export default function Dashboard() {
         <StatCard icon={TrendingUp} label="Interviews Completed" value={stats.interviews_completed} color="indigo" delay={0.15} />
         <StatCard icon={Clock} label="Practice Hours" value={`${stats.practice_hours}h`} color="amber" delay={0.2} />
         <StatCard icon={Award} label="Avg. ATS Score" value={`${stats.avg_ats_score}%`} color="pink" delay={0.25} />
+        <StatCard icon={Zap} label="Technical Strength" value={`${stats.avg_technical_score}%`} color="blue" delay={0.3} />
+        <StatCard icon={FileText} label="Project Quality" value={`${stats.avg_project_score}%`} color="green" delay={0.35} />
+        <StatCard icon={TrendingUp} label="Hiring Probability" value={`${stats.avg_hiring_probability}%`} color="purple" delay={0.4} />
+        <StatCard icon={Sparkles} label="Overall Readiness" value={`${Math.round((stats.avg_ats_score + stats.avg_interview_score + stats.avg_technical_score) / 3)}%`} color="orange" delay={0.45} />
       </div>
 
       {/* Charts Row */}
@@ -145,6 +155,69 @@ export default function Dashboard() {
                 <PolarAngleAxis dataKey="skill" tick={{ fontSize: 11, fill: '#94a3b8' }} />
                 <Radar name="Score" dataKey="A" stroke="#818cf8" fill="#6366f1" fillOpacity={0.25} />
               </RadarChart>
+            </ResponsiveContainer>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Additional Analytics Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Technical Trend */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
+          className="glass p-6 rounded-2xl">
+          <div className="mb-4">
+            <h3 className="text-lg font-bold text-white">Technical Growth</h3>
+            <p className="text-xs text-slate-500">Technical strength over time</p>
+          </div>
+          <div className="h-48">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={stats.technicalTrend?.length > 0 ? stats.technicalTrend : [{day:'Mon',score:0}]}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                <XAxis dataKey="day" stroke="#475569" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
+                <YAxis stroke="#475569" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} domain={[0, 100]} />
+                <Tooltip content={<CustomTooltip />} />
+                <Line type="monotone" dataKey="score" stroke="#10b981" strokeWidth={2} dot={{ fill: '#10b981', r: 3 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </motion.div>
+
+        {/* Project Quality Trend */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}
+          className="glass p-6 rounded-2xl">
+          <div className="mb-4">
+            <h3 className="text-lg font-bold text-white">Project Quality</h3>
+            <p className="text-xs text-slate-500">Project assessment trends</p>
+          </div>
+          <div className="h-48">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={stats.projectTrend?.length > 0 ? stats.projectTrend : [{day:'Mon',score:0}]}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                <XAxis dataKey="day" stroke="#475569" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
+                <YAxis stroke="#475569" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} domain={[0, 100]} />
+                <Tooltip content={<CustomTooltip />} />
+                <Line type="monotone" dataKey="score" stroke="#f59e0b" strokeWidth={2} dot={{ fill: '#f59e0b', r: 3 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </motion.div>
+
+        {/* Hiring Probability Trend */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
+          className="glass p-6 rounded-2xl">
+          <div className="mb-4">
+            <h3 className="text-lg font-bold text-white">Hiring Readiness</h3>
+            <p className="text-xs text-slate-500">Hiring probability trends</p>
+          </div>
+          <div className="h-48">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={stats.hiringTrend?.length > 0 ? stats.hiringTrend : [{day:'Mon',score:0}]}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                <XAxis dataKey="day" stroke="#475569" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
+                <YAxis stroke="#475569" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} domain={[0, 100]} />
+                <Tooltip content={<CustomTooltip />} />
+                <Line type="monotone" dataKey="score" stroke="#ec4899" strokeWidth={2} dot={{ fill: '#ec4899', r: 3 }} />
+              </LineChart>
             </ResponsiveContainer>
           </div>
         </motion.div>

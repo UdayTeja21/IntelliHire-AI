@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, Tooltip } from 'recharts';
+import { PolarAngleAxis, PolarGrid, Radar, RadarChart, ResponsiveContainer, Tooltip } from 'recharts';
 
 function ScoreRing({ score, label, color, size = 110 }) {
   const [displayed, setDisplayed] = useState(0);
@@ -34,19 +33,19 @@ export default function ScoreOverview({ data }) {
   const radarData = [
     { subject: 'ATS', score: data.atsScore || 0 },
     { subject: 'Recruiter', score: data.recruiterScore || 0 },
+    { subject: 'Technical', score: data.technicalStrengthScore || 0 },
+    { subject: 'Projects', score: data.projectQualityScore || 0 },
     { subject: 'Quality', score: data.resumeQualityScore || 0 },
-    { subject: 'Skills', score: data.skillAnalysis?.skillStrengthScore || 0 },
-    { subject: 'Projects', score: data.sectionAnalysis?.projects?.score || 0 },
     { subject: 'Match', score: data.jobMatchAnalysis?.matchPercentage || 0 },
   ];
 
   const scores = [
     { label: 'ATS Score', value: data.atsScore || 0, color: '#818cf8' },
     { label: 'Recruiter Score', value: data.recruiterScore || 0, color: '#34d399' },
-    { label: 'Hiring Probability', value: data.hiringProbability || 0, color: '#f59e0b' },
-    { label: 'Resume Quality', value: data.resumeQualityScore || 0, color: '#ec4899' },
+    { label: 'Technical Strength', value: data.technicalStrengthScore || 0, color: '#10b981' },
+    { label: 'Project Quality', value: data.projectQualityScore || 0, color: '#f59e0b' },
+    { label: 'Hiring Probability', value: data.hiringProbability || 0, color: '#ec4899' },
     { label: 'Interview Chance', value: data.interviewSelectionProbability || 0, color: '#06b6d4' },
-    { label: 'Job Match', value: data.jobMatchAnalysis?.matchPercentage || 0, color: '#a78bfa' },
   ];
 
   const atsPass = data.atsEngine?.atsPassPrediction || '';
