@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from 'framer-motion';
-import { BarChart2, Bot, CheckCircle, Mic, PlayCircle, Settings, User, Download } from 'lucide-react';
+import { BarChart2, Bot, CheckCircle, Download, Mic, PlayCircle, Settings, User } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import api from '../../lib/api';
 
@@ -50,9 +50,14 @@ export default function Interview() {
   useEffect(() => { isAiSpeakingRef.current = isAiSpeaking; }, [isAiSpeaking]);
 
   // ── Fetch resumes ──
+  // useEffect(() => {
+  //   api.get('/resume/history').then(r => setResumes(r.data)).catch(() => {});
+  // }, []);
   useEffect(() => {
-    api.get('/resume/history').then(r => setResumes(r.data)).catch(() => {});
-  }, []);
+  api.get('/api/v1/resume/history')
+    .then(r => setResumes(r.data))
+    .catch(() => {});
+}, []);
 
   // ── Scroll to bottom ──
   useEffect(() => {

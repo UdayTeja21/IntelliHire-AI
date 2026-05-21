@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from 'framer-motion';
-import { Briefcase, FilePlus, FileText, RefreshCw, X, Zap, Download } from 'lucide-react';
+import { Briefcase, Download, FilePlus, FileText, RefreshCw, X, Zap } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import ImprovementPlan from '../../components/resume/ImprovementPlan';
@@ -68,8 +68,11 @@ export default function ResumeAnalyzer() {
   const downloadReport = async () => {
     if (!result || !result.resume_id) return;
     try {
-      const response = await api.get(`/resume/${result.resume_id}/report`);
-      const reportData = response.data;
+      // const response = await api.get(`/resume/${result.resume_id}/report`);
+      // const reportData = response.data;
+      const response = await api.get(
+  `/api/v1/resume/${result.resume_id}/report`
+);
       
       // Create a comprehensive text report
       let report = `INTELLIHIRE AI - RESUME ANALYSIS REPORT\n`;
