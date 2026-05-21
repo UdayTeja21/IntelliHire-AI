@@ -1,12 +1,7 @@
-// frontend/src/services/api.js
-
 import axios from 'axios';
 
-// Create Axios instance
 const api = axios.create({
-  baseURL:
-    process.env.NEXT_PUBLIC_API_URL ||
-    'http://localhost:8000',
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
 
   headers: {
     'Content-Type': 'application/json',
@@ -15,10 +10,7 @@ const api = axios.create({
   timeout: 30000,
 });
 
-// ================================
-// Request Interceptor
-// Automatically attach JWT token
-// ================================
+// Attach JWT token automatically
 api.interceptors.request.use(
   (config) => {
     if (typeof window !== 'undefined') {
@@ -32,20 +24,14 @@ api.interceptors.request.use(
     return config;
   },
 
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// ================================
-// Response Interceptor
-// Handle auth errors globally
-// ================================
+// Handle unauthorized responses
 api.interceptors.response.use(
   (response) => response,
 
   (error) => {
-    // Unauthorized
     if (error.response?.status === 401) {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('token');
@@ -55,13 +41,7 @@ api.interceptors.response.use(
       }
     }
 
-    // Optional debugging logs
-    console.error('API Error:', {
-      url: error.config?.url,
-      status: error.response?.status,
-      data: error.response?.data,
-      message: error.message,
-    });
+    console.error('API Error:', error);
 
     return Promise.reject(error);
   }
