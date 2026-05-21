@@ -50,7 +50,8 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (user) {
-      api.get('/user/stats')
+      api.get('/api/v1/user/stats')
+      // api.get('/user/stats')
         .then(res => setStats(res.data))
         .catch(err => console.error("Failed to load stats:", err));
     }
