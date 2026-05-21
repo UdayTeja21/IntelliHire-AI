@@ -21,7 +21,10 @@ def _fix_db_url(url: str) -> str:
     safe_password = quote_plus(decoded_password)
     return f"{prefix}{safe_password}{suffix}"
 
-_db_url = _fix_db_url(settings.DATABASE_URL)
+_db_url = _fix_db_url(settings.DATABASE_URL).replace(
+    "postgresql://",
+    "postgresql+psycopg://"
+)
 
 engine = create_engine(
     _db_url,
