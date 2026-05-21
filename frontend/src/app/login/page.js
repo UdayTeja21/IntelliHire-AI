@@ -1,13 +1,13 @@
 "use client";
+import axios from 'axios';
 import { motion } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import { ArrowRight, BrainCircuit, Eye, EyeOff, LogIn } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/Toast';
-import axios from 'axios';
-import { BrainCircuit, LogIn, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 export default function Login() {
   const { register, handleSubmit, formState: { errors } } = useForm();
@@ -30,9 +30,18 @@ export default function Login() {
       formData.append('username', data.email);
       formData.append('password', data.password);
 
-      const response = await axios.post('http://localhost:8000/api/v1/auth/login', formData, {
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-      });
+      // const response = await axios.post('http://localhost:8000/api/v1/auth/login', formData, {
+      //   headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+      // });
+      const response = await axios.post(
+  `${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/login`,
+  formData,
+  {
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    }
+  }
+);
 
       login(response.data.user, response.data.access_token);
       toast({

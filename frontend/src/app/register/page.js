@@ -1,13 +1,13 @@
 "use client";
+import axios from 'axios';
 import { motion } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import { ArrowRight, CheckCircle, Eye, EyeOff, UserPlus } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/Toast';
-import axios from 'axios';
-import { BrainCircuit, UserPlus, Eye, EyeOff, CheckCircle, ArrowRight } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 export default function Register() {
   const { register, handleSubmit, watch, formState: { errors } } = useForm();
@@ -36,29 +36,80 @@ export default function Register() {
   const strengthLabel = ['', 'Weak', 'Fair', 'Good', 'Strong'][strength];
   const strengthColor = ['', 'bg-rose-500', 'bg-amber-500', 'bg-blue-500', 'bg-emerald-500'][strength];
 
-  const onSubmit = async (data) => {
-    setIsLoading(true);
-    setErrorMsg('');
-    try {
-      const response = await axios.post('http://localhost:8000/api/v1/auth/register', {
+//   const onSubmit = async (data) => {
+//     setIsLoading(true);
+//     setErrorMsg('');
+//     // try {
+//     //   const response = await axios.post('http://localhost:8000/api/v1/auth/register', {
+//     //     email: data.email,
+//     //     password: data.password,
+//     //     full_name: data.full_name
+//     //   });
+
+
+//     const response = await axios.post(
+//   `${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/register`,
+//   {
+//     email: data.email,
+//     password: data.password,
+//     full_name: data.full_name
+//   }
+// );
+//       login(response.data.user, response.data.access_token);
+//       toast({
+//         type: 'success',
+//         title: `Account created! 🎉`,
+//         message: `Welcome aboard, ${response.data.user.full_name?.split(' ')[0]}! Start your first mock interview.`,
+//         duration: 5000,
+//       });
+//       router.push('/');
+//     } catch (error) {
+//       setErrorMsg(error.response?.data?.detail || 'Registration failed. Please try again.');
+//     } finally {
+//       setIsLoading(false);
+//     }
+//   };
+
+
+const onSubmit = async (data) => {
+  setIsLoading(true);
+  setErrorMsg('');
+
+  try {
+    const response = await axios.post(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/register`,
+      {
         email: data.email,
         password: data.password,
         full_name: data.full_name
-      });
-      login(response.data.user, response.data.access_token);
-      toast({
-        type: 'success',
-        title: `Account created! 🎉`,
-        message: `Welcome aboard, ${response.data.user.full_name?.split(' ')[0]}! Start your first mock interview.`,
-        duration: 5000,
-      });
-      router.push('/');
-    } catch (error) {
-      setErrorMsg(error.response?.data?.detail || 'Registration failed. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      }
+    );
+
+    login(response.data.user, response.data.access_token);
+
+    toast({
+      type: 'success',
+      title: `Account created! 🎉`,
+      message: `Welcome aboard, ${
+        response.data.user.full_name?.split(' ')[0]
+      }! Start your first mock interview.`,
+      duration: 5000,
+    });
+
+    router.push('/');
+
+  } catch (error) {
+    console.error(error);
+
+    setErrorMsg(
+      error.response?.data?.detail ||
+      'Registration failed. Please try again.'
+    );
+
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const features = ['AI-powered mock interviews', 'ATS resume scoring', 'Real-time feedback'];
 
