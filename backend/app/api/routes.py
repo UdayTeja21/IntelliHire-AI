@@ -198,6 +198,17 @@ def start_interview(
     return {"session_id": session.id, "questions": questions}
 
 
+@router.post("/interview/transcribe")
+async def transcribe_speech(
+    file: UploadFile = File(...),
+    current_user: models.User = Depends(get_current_user)
+):
+    from app.services.ai import groq_service
+    contents = await file.read()
+    text = await run_in_threadpool(groq_service.transcribe_audio, contents, file.filename)
+    return {"text": text}
+
+
 class AnswerRequest(BaseModel):
     session_id: Optional[int] = None
     question: str

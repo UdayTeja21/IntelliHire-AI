@@ -23,7 +23,11 @@ def generate_gemini(prompt: str, max_retries: int = 2) -> str:
     for attempt in range(max_retries + 1):
         try:
             # Gemini SDK handles network requests synchronously here
-            response = model.generate_content(prompt, request_options={"timeout": 15})
+            response = model.generate_content(
+                prompt, 
+                generation_config={"response_mime_type": "application/json"},
+                request_options={"timeout": 15}
+            )
             return response.text
         except Exception as e:
             if attempt == max_retries:

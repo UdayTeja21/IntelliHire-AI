@@ -18,7 +18,7 @@ def _orchestrate_gemini_fallback(prompt: str) -> str:
     """
     try:
         print("[LLM Orchestrator] Attempting Gemini for Resume Analysis...")
-        return generate_gemini(prompt)
+        return generate_gemini(prompt, max_retries=0)
     except Exception as e_gemini:
         print(f"[LLM Orchestrator] Gemini failed: {e_gemini}")
         raise RuntimeError("Primary Resume LLM failed.")
@@ -29,7 +29,7 @@ def _orchestrate_groq_fallback(prompt: str) -> str:
     """
     try:
         print("[LLM Orchestrator] Attempting Groq for Mock Interview...")
-        return generate_groq(prompt)
+        return generate_groq(prompt, max_retries=0)
     except Exception as e_groq:
         print(f"[LLM Orchestrator] Groq failed: {e_groq}")
         raise RuntimeError("Primary Interview LLM failed.")
@@ -39,9 +39,13 @@ def analyze_resume(resume_text: str, target_role: str) -> dict:
 You are an elite AI recruitment intelligence engine used by FAANG companies. 
 Perform a DEEP, INTELLIGENT, LINE-BY-LINE analysis of this resume for the role: {target_role}
 
-CRITICAL INSTRUCTION: For "projectAnalysis", you MUST extract ALL projects that are ACTUALLY present in the provided resume. DO NOT hallucinate, invent, or output random projects. Base everything strictly on the provided text. Provide a "projectWeightage" (percentage of overall impact of this project on the resume) and a list of "keywordsChanged" indicating what ATS keywords you added or optimized in the optimizedDescription.
+CRITICAL INSTRUCTION: For "projectAnalysis", you MUST extract EVERY SINGLE project found in the resume as a completely separate JSON object. Do not group them. For each project, you MUST provide its specific "technologies" (tech stack), a dedicated "projectWeightage" (its percentage impact on the resume), and tailored "suggestions" for improvements. Do NOT hallucinate.
 
-CRITICAL INSTRUCTION: For "improvementRoadmap", provide a highly specific, dynamic improvement plan based strictly on the candidate's actual resume gaps, missing skills, or weak areas. Do NOT output generic advice like "ensure document is pure" or "remove complexity".
+CRITICAL INSTRUCTION: For "skillAnalysis", you MUST analyze the skills extracted directly from the resume and compare them against real-world, current industry demands (the "real view") for the target role. Provide a brutal, realistic gap analysis.
+
+CRITICAL INSTRUCTION: For "recruiterSimulation", act as an elite FAANG hiring manager. Provide a deeply critical "technicalImpression", "projectQualityReview", and list any "redFlags". 
+
+CRITICAL INSTRUCTION: For "improvementRoadmap", provide a highly specific, dynamic, and actionable step-by-step improvement plan based strictly on the candidate's actual resume gaps. Do NOT output generic advice like "ensure document is pure text".
 
 CRITICAL INSTRUCTION: For "sectionAnalysis", you MUST dynamically extract and analyze ALL key sections present in the resume (e.g., summary, experience, education, projects, skills, certifications, achievements). Do not limit it to just summary and experience.Return ONLY valid JSON.
 {{
@@ -112,9 +116,17 @@ Resume:
         if not parsed_json:
             raise ValueError("Failed to parse JSON")
         return validate_resume_scores(parsed_json)
-    except Exception as e:
-        print(f"[Fallback Triggered] Resume analysis failed: {e}")
-        return validate_resume_scores(get_fallback_resume_analysis(resume_text, target_role))
+    except Exception as e_gemini:
+        print(f"[Fallback Triggered] Gemini Resume analysis failed: {e_gemini}. Trying Groq...")
+        try:
+            raw_text = _orchestrate_groq_fallback(prompt)
+            parsed_json = extract_json_from_text(raw_text)
+            if not parsed_json:
+                raise ValueError("Failed to parse JSON")
+            return validate_resume_scores(parsed_json)
+        except Exception as e_groq:
+            print(f"[Fallback Triggered] Groq Resume analysis failed: {e_groq}. Using algorithmic fallback.")
+            return validate_resume_scores(get_fallback_resume_analysis(resume_text, target_role))
 
 def generate_questions(role: str, type: str, difficulty: str, count: int = 10, resume_context: str = None) -> list:
     if resume_context:
@@ -132,20 +144,27 @@ CRITICAL: NEVER return placeholder questions like "Sample Question 1". Every que
 
 Return ONLY a JSON array of objects: [{{"question": "string", "category": "string"}}]"""
 
-    try:
-        raw_text = _orchestrate_gemini_fallback(prompt)
-        result = extract_json_from_text(raw_text)
-        
-        if isinstance(result, list) and len(result) > 0:
-            return result
-        elif isinstance(result, dict):
-            for val in result.values():
+    def process_result(raw):
+        res = extract_json_from_text(raw)
+        if isinstance(res, list) and len(res) > 0:
+            return res
+        elif isinstance(res, dict):
+            for val in res.values():
                 if isinstance(val, list) and len(val) > 0:
                     return val
         raise ValueError("Invalid JSON format for questions.")
-    except Exception as e:
-        print(f"[Fallback Triggered] Question generation failed: {e}")
-        return get_dynamic_fallback_questions(role, type, difficulty, count)
+
+    try:
+        raw_text = _orchestrate_gemini_fallback(prompt)
+        return process_result(raw_text)
+    except Exception as e_gemini:
+        print(f"[Fallback Triggered] Gemini Question generation failed: {e_gemini}. Trying Groq...")
+        try:
+            raw_text = _orchestrate_groq_fallback(prompt)
+            return process_result(raw_text)
+        except Exception as e_groq:
+            print(f"[Fallback Triggered] Groq Question generation failed: {e_groq}. Using algorithmic fallback.")
+            return get_dynamic_fallback_questions(role, type, difficulty, count)
 
 
 def evaluate_answer(question: str, answer: str, role: str) -> dict:
@@ -170,12 +189,20 @@ Return ONLY valid JSON:
   }}
 }}"""
     
+    def process_eval(raw):
+        res = extract_json_from_text(raw)
+        if isinstance(res, dict) and "score" in res:
+            return res
+        raise ValueError("Invalid JSON format for answer evaluation.")
+
     try:
         raw_text = _orchestrate_gemini_fallback(prompt)
-        result = extract_json_from_text(raw_text)
-        if isinstance(result, dict) and "score" in result:
-            return result
-        raise ValueError("Invalid JSON format for answer evaluation.")
-    except Exception as e:
-        print(f"[Fallback Triggered] Answer evaluation failed: {e}")
-        return get_fallback_answer_evaluation(question, answer, role)
+        return process_eval(raw_text)
+    except Exception as e_gemini:
+        print(f"[Fallback Triggered] Gemini Answer evaluation failed: {e_gemini}. Trying Groq...")
+        try:
+            raw_text = _orchestrate_groq_fallback(prompt)
+            return process_eval(raw_text)
+        except Exception as e_groq:
+            print(f"[Fallback Triggered] Groq Answer evaluation failed: {e_groq}. Using algorithmic fallback.")
+            return get_fallback_answer_evaluation(question, answer, role)

@@ -102,82 +102,75 @@ export default function Interview() {
   }, [isListening]);
 
   // ─────────────────────────────────────────────────────────────────────────
-  // Build SpeechRecognition once
+  // Setup MediaRecorder for Whisper AI Transcription
   // ─────────────────────────────────────────────────────────────────────────
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) return;
-
-    const rec = new SR();
-    rec.continuous = true;
-    rec.interimResults = true;
-    rec.lang = 'en-US';
-    rec.maxAlternatives = 1;
-
-    rec.onresult = (evt) => {
-      let interim = '';
-      let newFinal = '';
-      for (let i = evt.resultIndex; i < evt.results.length; i++) {
-        if (evt.results[i].isFinal) {
-          newFinal += evt.results[i][0].transcript + ' ';
-        } else {
-          interim += evt.results[i][0].transcript;
-        }
-      }
-      if (newFinal) {
-        setFinalTranscript(prev => prev + newFinal);
-      }
-      setLiveTranscript(interim);
-
-      // reset silence timer on every speech event
-      clearTimeout(silenceTimerRef.current);
-      silenceTimerRef.current = setTimeout(() => {
-        // user has been silent — auto-submit
-        if (!isEvaluatingRef.current && !isAiSpeakingRef.current) {
-          const full = (finalTranscriptRef.current + liveTranscriptRef.current).trim();
-          if (full) submitAnswer(full);
-        }
-      }, SILENCE_DELAY_MS);
-    };
-
-    rec.onerror = (evt) => {
-      if (evt.error === 'not-allowed') {
-        alert('Microphone access is blocked. Please allow microphone in your browser settings.');
-      } else if (evt.error !== 'network' && evt.error !== 'aborted') {
-        console.warn('SR error:', evt.error);
+    // Cleanup on unmount
+    return () => {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+        mediaRecorderRef.current.stop();
       }
     };
-
-    rec.onend = () => {
-      // Auto-restart if we should still be listening
-      if (!isAiSpeakingRef.current && !isEvaluatingRef.current) {
-        try { rec.start(); } catch (_) {}
-      } else {
-        setIsListening(false);
-      }
-    };
-
-    recognitionRef.current = rec;
-  }, []); // eslint-disable-line
+  }, []);
 
   // ─────────────────────────────────────────────────────────────────────────
   // Start / stop mic
   // ─────────────────────────────────────────────────────────────────────────
-  const startListening = useCallback(() => {
-    if (!recognitionRef.current || isListening) return;
+  const startListening = useCallback(async () => {
+    if (isListening) return;
     try {
-      recognitionRef.current.start();
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const formData = new FormData();
+        formData.append('file', audioBlob, 'recording.webm');
+        
+        setMicStatus('processing');
+        setLiveTranscript('Transcribing with Whisper AI...');
+        
+        try {
+          const res = await api.post('/interview/transcribe', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+          });
+          if (res.data && res.data.text) {
+            setFinalTranscript(prev => prev + (prev ? ' ' : '') + res.data.text);
+          }
+        } catch (err) {
+          console.error('Transcription failed:', err);
+        } finally {
+          setLiveTranscript('');
+          setMicStatus('idle');
+          stream.getTracks().forEach(track => track.stop());
+        }
+      };
+
+      mediaRecorder.start();
       setIsListening(true);
       setMicStatus('listening');
-    } catch (_) {}
+    } catch (err) {
+      alert('Microphone access denied or not available.');
+      console.error(err);
+    }
   }, [isListening]);
 
   const stopListening = useCallback(() => {
-    clearTimeout(silenceTimerRef.current);
-    try { recognitionRef.current?.stop(); } catch (_) {}
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop();
+    }
     setIsListening(false);
-    setMicStatus('idle');
   }, []);
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -225,11 +218,10 @@ export default function Interview() {
     }
   }, [session, currentIndex]); // eslint-disable-line
 
-  // ─── Submit answer ───
-  const submitAnswer = useCallback(async (answer) => {
-    if (!answer.trim() || isEvaluatingRef.current) return;
+  const submitAnswer = useCallback(async () => {
+    const answer = (finalTranscriptRef.current + " " + liveTranscriptRef.current).trim();
+    if (!answer || isEvaluatingRef.current) return;
 
-    clearTimeout(silenceTimerRef.current);
     stopListening();
     setIsEvaluating(true);
     setMicStatus('processing');
@@ -404,7 +396,7 @@ export default function Interview() {
                   <Mic size={15} />
                 </div>
                 <div className="text-xs text-slate-300 leading-relaxed font-semibold">
-                  The interview is <span className="text-indigo-300">completely hands-free</span>. Your mic activates automatically after each question. Just speak your answer — it submits on silence.
+                  The interview is <span className="text-indigo-300">interactive and voice-driven</span>. Click the mic to speak, review your transcribed answer in the text box, and click Send when you're ready.
                 </div>
               </div>
 
@@ -848,11 +840,24 @@ export default function Interview() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="w-full"
+              className="w-full flex flex-col gap-3"
             >
-              <div className="w-full bg-[#0a0f1c]/50 border border-teal-500/30 rounded-xl px-5 py-4 text-teal-100 text-sm min-h-[100px] flex items-center justify-center text-center shadow-[inset_0_0_20px_rgba(20,184,166,0.05)] italic font-semibold">
-                {combinedTranscript || "Listening... Speak your answer now."}
-              </div>
+              <textarea
+                value={finalTranscript + (liveTranscript ? " " + liveTranscript : "")}
+                onChange={(e) => {
+                  setFinalTranscript(e.target.value);
+                  setLiveTranscript("");
+                }}
+                placeholder="Listening... Speak your answer or type it here."
+                className="w-full bg-[#0a0f1c]/50 border border-teal-500/30 rounded-xl px-5 py-4 text-teal-100 text-sm min-h-[100px] shadow-[inset_0_0_20px_rgba(20,184,166,0.05)] focus:outline-none focus:border-teal-400 font-semibold resize-y"
+              />
+              <button
+                onClick={submitAnswer}
+                disabled={!combinedTranscript || isEvaluating}
+                className="self-end px-6 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(20,184,166,0.2)]"
+              >
+                Send Answer
+              </button>
             </motion.div>
           ) : null}
         </AnimatePresence>

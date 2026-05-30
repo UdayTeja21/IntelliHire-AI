@@ -44,3 +44,32 @@ def generate_groq(prompt: str, max_retries: int = 2) -> str:
             time.sleep(wait_time)
             
     raise RuntimeError("Groq generation failed unexpectedly.")
+
+def transcribe_audio(file_bytes: bytes, filename: str = "audio.webm") -> str:
+    """
+    Sends raw audio to Groq's Whisper Large V3 API for flawless STT.
+    """
+    if not getattr(settings, "GROQ_API_KEY", None):
+        raise ValueError("GROQ_API_KEY is not set.")
+        
+    url = "https://api.groq.com/openai/v1/audio/transcriptions"
+    headers = {
+        "Authorization": f"Bearer {settings.GROQ_API_KEY}"
+    }
+    
+    files = {
+        "file": (filename, file_bytes, "audio/webm")
+    }
+    data = {
+        "model": "whisper-large-v3-turbo",
+        "response_format": "json"
+    }
+    
+    try:
+        response = requests.post(url, headers=headers, files=files, data=data, timeout=30)
+        response.raise_for_status()
+        return response.json().get("text", "")
+    except Exception as e:
+        logger.error(f"[Groq Whisper API] Transcription failed: {str(e)}")
+        # Fallback to empty string on failure
+        return ""
