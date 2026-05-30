@@ -1,6 +1,8 @@
 import './globals.css';
 import { AuthProvider } from '../context/AuthContext';
-import Navbar from '../components/Navbar';
+import { ThemeProvider } from '../context/ThemeContext';
+import Sidebar from '../components/layout/Sidebar';
+import Topbar from '../components/layout/Topbar';
 import { ToastProvider } from '../components/Toast';
 
 export const metadata = {
@@ -10,16 +12,23 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className="dark">
-      <body className="min-h-screen bg-[#0a0f1e] text-white antialiased">
-        <AuthProvider>
-          <ToastProvider>
-            <Navbar />
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              {children}
-            </main>
-          </ToastProvider>
-        </AuthProvider>
+    <html lang="en" suppressHydrationWarning>
+      <body className="min-h-screen antialiased bg-[#050511] text-white overflow-hidden flex">
+        <ThemeProvider>
+          <AuthProvider>
+            <ToastProvider>
+              <Sidebar />
+              <div className="flex-1 flex flex-col h-screen overflow-hidden ml-[260px]">
+                <Topbar />
+                <main className="flex-1 overflow-y-auto p-6 md:p-8">
+                  <div className="max-w-6xl mx-auto w-full">
+                    {children}
+                  </div>
+                </main>
+              </div>
+            </ToastProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

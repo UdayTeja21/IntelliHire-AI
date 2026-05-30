@@ -44,9 +44,10 @@ export default function ProjectAnalysis({ data }) {
             </div>
 
             {/* Scores */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, marginBottom: 16 }}>
               <ScorePill label="Complexity" value={`${proj.complexityScore || 0}`} color="#818cf8" />
               <ScorePill label="Recruiter Value" value={`${proj.recruiterValue || 0}`} color="#34d399" />
+              <ScorePill label="Weightage" value={proj.projectWeightage || 'N/A'} color="#f59e0b" />
               <ScorePill label="Level" value={proj.level?.split(' ')[0] || 'N/A'} color={levelColor} />
             </div>
 
@@ -76,10 +77,27 @@ export default function ProjectAnalysis({ data }) {
               </div>
             )}
 
+            {proj.suggestions?.length > 0 && (
+              <div style={{ marginBottom: 10 }}>
+                <p style={{ fontSize: 11, fontWeight: 700, color: '#818cf8', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>💡 Suggestions to Improve</p>
+                {proj.suggestions.map((s, j) => <p key={j} style={{ fontSize: 13, color: '#94a3b8', padding: '4px 0', display: 'flex', gap: 8 }}><span style={{ color: '#818cf8' }}>→</span>{s}</p>)}
+              </div>
+            )}
+
             {proj.optimizedDescription && (
               <div style={{ padding: 14, background: 'rgba(52,211,153,0.05)', borderRadius: 10, border: '1px solid rgba(52,211,153,0.15)', marginTop: 8 }}>
                 <p style={{ fontSize: 11, fontWeight: 700, color: '#34d399', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 1 }}>✨ AI Optimized Description</p>
-                <p style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.7, fontStyle: 'italic' }}>{proj.optimizedDescription}</p>
+                <p style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.7, fontStyle: 'italic', marginBottom: proj.keywordsChanged?.length ? 10 : 0 }}>{proj.optimizedDescription}</p>
+                {proj.keywordsChanged?.length > 0 && (
+                  <div>
+                    <p style={{ fontSize: 10, fontWeight: 700, color: '#34d399', marginBottom: 4, textTransform: 'uppercase' }}>Keywords Optimized</p>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                      {proj.keywordsChanged.map((kw, j) => (
+                        <span key={j} style={{ padding: '2px 8px', borderRadius: 4, background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.2)', color: '#10b981', fontSize: 11, fontWeight: 600 }}>{kw}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </motion.div>

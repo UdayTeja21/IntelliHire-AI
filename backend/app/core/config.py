@@ -11,8 +11,10 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = "postgresql://postgres:password@localhost:5432/careersync"
     
-    # Gemini API
+    # API Keys
     GEMINI_API_KEY: Optional[str] = None
+    GROQ_API_KEY: Optional[str] = None
+    OPENROUTER_API_KEY: Optional[str] = None
     
     class Config:
         case_sensitive = True

@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from fastapi.security import OAuth2PasswordBearer
+from fastapi.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from app.db.database import get_db
 from app.db import models
-from app.services import ai_service
+from app.services.ai import core as ai_service
 from app.core.config import settings
 from jose import JWTError, jwt
 from pydantic import BaseModel
@@ -12,6 +13,13 @@ from typing import Optional
 import json
 import PyPDF2
 import io
+import datetime
+from datetime import timedelta
+import logging
+
+# Configure logger
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -36,15 +44,20 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     return user
 
 
-def extract_text_from_pdf(file_bytes: bytes) -> str:
+def extract_text_from_pdf(file_bytes: bytes, max_chars: int = 15000) -> str:
     try:
         pdf_reader = PyPDF2.PdfReader(io.BytesIO(file_bytes))
         text = ""
         for page in pdf_reader.pages:
             page_text = page.extract_text() or ""
             text += page_text + "\n"
+            if len(text) > max_chars:
+                logger.warning(f"PDF exceeds {max_chars} chars. Truncating to prevent API overload.")
+                text = text[:max_chars]
+                break
         return text.strip()
     except Exception as e:
+        logger.error(f"Failed to parse PDF: {str(e)}")
         raise HTTPException(status_code=400, detail=f"Could not read PDF: {str(e)}")
 
 
@@ -58,9 +71,18 @@ async def analyze_resume_text(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
+    MAX_FILE_SIZE_MB = 5
+    MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
+
     text = ""
+    file_name = None
     if file:
         contents = await file.read()
+        if len(contents) > MAX_FILE_SIZE_BYTES:
+            logger.warning(f"File size exceeded {MAX_FILE_SIZE_MB}MB limit.")
+            raise HTTPException(status_code=413, detail=f"File too large. Maximum size is {MAX_FILE_SIZE_MB}MB.")
+            
+        file_name = file.filename
         if file.filename.endswith(".pdf"):
             text = extract_text_from_pdf(contents)
         else:
@@ -70,10 +92,22 @@ async def analyze_resume_text(
     else:
         raise HTTPException(status_code=400, detail="Please provide a file or resume text.")
 
-    result = ai_service.analyze_resume(text, target_role)
+    if not text.strip():
+        raise HTTPException(status_code=400, detail="Extracted text is empty. Please provide a valid resume.")
 
+    logger.info(f"Starting resume analysis for user {current_user.email} (Role: {target_role})")
+    
+    start_time = datetime.datetime.now()
+    # Run the synchronous, blocking AI service in a threadpool to prevent the FastAPI event loop from freezing
+    result = await run_in_threadpool(ai_service.analyze_resume, text, target_role)
+    elapsed = (datetime.datetime.now() - start_time).total_seconds()
+    
+    logger.info(f"Resume analysis completed in {elapsed:.2f} seconds.")
+
+    # Note: New metrics (communication, skillRelevance, resumeStructure) are stored in analysis_json
     resume = models.Resume(
         user_id=current_user.id,
+        file_name=file_name,
         content_text=text,
         target_role=target_role,
         ats_score=result.get("atsScore", 0),
@@ -99,19 +133,25 @@ def get_resume_history(
         models.Resume.user_id == current_user.id
     ).order_by(models.Resume.created_at.desc()).all()
 
-    return [
-        {
+    # Expand the history to include the new metrics from analysis_json
+    response_data = []
+    for r in resumes:
+        analysis = json.loads(r.analysis_json) if r.analysis_json else {}
+        response_data.append({
             "id": r.id,
+            "file_name": r.file_name,
             "target_role": r.target_role,
             "ats_score": r.ats_score,
             "recruiter_score": r.recruiter_score,
             "technical_strength_score": r.technical_strength_score,
             "project_quality_score": r.project_quality_score,
             "hiring_probability": r.hiring_probability,
+            "communication": analysis.get("communication", 0),
+            "skill_relevance": analysis.get("skillRelevance", 0),
+            "resume_structure": analysis.get("resumeStructure", 0),
             "created_at": r.created_at.isoformat()
-        }
-        for r in resumes
-    ]
+        })
+    return response_data
 
 
 # --- Interview Routes ---
@@ -245,6 +285,10 @@ def generate_interview_report(
     
     avg_score = total_score / answered_count if answered_count > 0 else 0
     
+    # Calculate overall confidence
+    confidences = [q["evaluation"].get("confidenceScore", 0) for q in q_data if q.get("evaluation")]
+    avg_confidence = sum(confidences) / len(confidences) if confidences else 0
+
     report = {
         "user_info": {
             "name": current_user.full_name,
@@ -255,7 +299,8 @@ def generate_interview_report(
             "type": session.type,
             "difficulty": session.difficulty,
             "created_at": session.created_at.isoformat(),
-            "overall_score": session.overall_score
+            "overall_score": session.overall_score,
+            "overall_confidence": round(avg_confidence, 1)
         },
         "performance": {
             "average_score": round(avg_score, 1),
@@ -269,7 +314,6 @@ def generate_interview_report(
         "recommendations": []
     }
     
-    # Aggregate strengths and weaknesses
     all_strengths = []
     all_weaknesses = []
     
@@ -278,7 +322,6 @@ def generate_interview_report(
             all_strengths.extend(q["evaluation"].get("strengths", []))
             all_weaknesses.extend(q["evaluation"].get("weaknesses", []))
     
-    # Get most common
     from collections import Counter
     report["strengths"] = [item for item, count in Counter(all_strengths).most_common(3)]
     report["weaknesses"] = [item for item, count in Counter(all_weaknesses).most_common(3)]
@@ -302,7 +345,6 @@ def generate_resume_report(
     
     analysis = json.loads(resume.analysis_json) if resume.analysis_json else {}
     
-    # Generate comprehensive report
     report = {
         "user_info": {
             "name": current_user.full_name,
@@ -318,6 +360,9 @@ def generate_resume_report(
             "recruiter_score": resume.recruiter_score,
             "technical_strength": resume.technical_strength_score,
             "project_quality": resume.project_quality_score,
+            "communication": analysis.get("communication", 0),
+            "skill_relevance": analysis.get("skillRelevance", 0),
+            "resume_structure": analysis.get("resumeStructure", 0),
             "hiring_probability": resume.hiring_probability
         },
         "analysis": analysis,
@@ -326,29 +371,25 @@ def generate_resume_report(
     }
     
     return report
+
 @router.get("/user/stats")
 def get_user_stats(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    # Interviews completed
     interviews_count = db.query(models.InterviewSession).filter(
         models.InterviewSession.user_id == current_user.id
     ).count()
 
-    # Practice hours (assume each interview is 30 mins = 0.5 hours)
     practice_hours = round(interviews_count * 0.5, 1)
 
-    # Avg Interview Score
     avg_interview = db.query(func.avg(models.InterviewSession.overall_score)).filter(
         models.InterviewSession.user_id == current_user.id
     ).scalar()
     
-    # If overall_score isn't set, fallback to questions average
     if avg_interview is None:
         avg_q_score = db.query(func.avg(models.InterviewQuestion.score)).join(
             models.InterviewSession
         ).filter(models.InterviewSession.user_id == current_user.id).scalar()
         avg_interview = avg_q_score if avg_q_score else 0
 
-    # Avg Technical Strength Score
     avg_technical = db.query(func.avg(models.Resume.technical_strength_score)).filter(
         models.Resume.user_id == current_user.id
     ).scalar()
@@ -359,22 +400,31 @@ def get_user_stats(db: Session = Depends(get_db), current_user: models.User = De
     ).scalar()
     avg_ats = avg_ats if avg_ats else 0
 
-    # Avg Project Quality Score
     avg_project = db.query(func.avg(models.Resume.project_quality_score)).filter(
         models.Resume.user_id == current_user.id
     ).scalar()
     avg_project = avg_project if avg_project else 0
 
-    # Avg Hiring Probability
     avg_hiring = db.query(func.avg(models.Resume.hiring_probability)).filter(
         models.Resume.user_id == current_user.id
     ).scalar()
     avg_hiring = avg_hiring if avg_hiring else 0
 
-    import datetime
-    from datetime import timedelta
+    # For new metrics, we compute avg from JSON (a bit slow but works for this scale)
+    all_resumes = db.query(models.Resume).filter(models.Resume.user_id == current_user.id).all()
+    avg_comm, avg_skill = 0, 0
+    if all_resumes:
+        comm_sum, skill_sum, count = 0, 0, 0
+        for r in all_resumes:
+            if r.analysis_json:
+                data = json.loads(r.analysis_json)
+                comm_sum += data.get("communication", 0)
+                skill_sum += data.get("skillRelevance", 0)
+                count += 1
+        if count > 0:
+            avg_comm = comm_sum / count
+            avg_skill = skill_sum / count
 
-    # Recent Interviews
     recent_sessions = db.query(models.InterviewSession).filter(
         models.InterviewSession.user_id == current_user.id
     ).order_by(models.InterviewSession.created_at.desc()).limit(3).all()
@@ -393,23 +443,18 @@ def get_user_stats(db: Session = Depends(get_db), current_user: models.User = De
             "badge": badge
         })
 
-    # Line Data (Last 7 days mock or calculated)
     line_data = []
     today = datetime.datetime.now(datetime.timezone.utc).date()
     for i in range(6, -1, -1):
         target_date = today - timedelta(days=i)
         day_str = target_date.strftime("%a")
-        # Try to find a session on this day
         day_sessions = [s for s in db.query(models.InterviewSession).filter(models.InterviewSession.user_id == current_user.id).all() if s.created_at and s.created_at.date() == target_date]
         if day_sessions:
             avg_s = sum([s.overall_score for s in day_sessions if s.overall_score]) / len([s for s in day_sessions if s.overall_score]) if [s for s in day_sessions if s.overall_score] else 0
             line_data.append({"day": day_str, "score": int(avg_s)})
         else:
-            # fill with baseline or previous
             line_data.append({"day": day_str, "score": 0})
             
-    # For a newly registered user, if line_data is mostly 0, let's provide some realistic fallback curve ending with their actual avg to make it look nice, 
-    # but strictly from DB if data exists. To prevent empty graph, we use their avg_interview if no data today.
     if sum(d["score"] for d in line_data) == 0:
         base = int(avg_interview)
         line_data = [
@@ -417,42 +462,35 @@ def get_user_stats(db: Session = Depends(get_db), current_user: models.User = De
             {"day": "Thu", "score": base}, {"day": "Fri", "score": base}, {"day": "Sat", "score": base}, {"day": "Sun", "score": base}
         ]
 
-    # Radar Data (Skills breakdown) - Enhanced
     base_score = int(avg_interview)
     radar_data = [
         {"skill": "Technical", "A": max(0, int(avg_technical))},
-        {"skill": "Communication", "A": base_score if base_score else 0},
-        {"skill": "Problem Solving", "A": max(0, base_score + 2) if base_score else 0},
+        {"skill": "Communication", "A": int(avg_comm) if avg_comm else (base_score if base_score else 0)},
+        {"skill": "Skill Match", "A": int(avg_skill) if avg_skill else max(0, base_score + 2) if base_score else 0},
         {"skill": "Project Quality", "A": max(0, int(avg_project))},
         {"skill": "Hiring Readiness", "A": max(0, int(avg_hiring))},
     ]
 
-    # Additional analytics data
     technical_trend = []
     project_trend = []
     hiring_trend = []
     
-    # Get last 7 days data for trends
-    today = datetime.datetime.now(datetime.timezone.utc).date()
     for i in range(6, -1, -1):
         target_date = today - timedelta(days=i)
         day_str = target_date.strftime("%a")
         
-        # Technical scores for the day
         day_technical = db.query(func.avg(models.Resume.technical_strength_score)).filter(
             models.Resume.user_id == current_user.id,
             func.date(models.Resume.created_at) == target_date
         ).scalar()
         technical_trend.append({"day": day_str, "score": int(day_technical) if day_technical else 0})
         
-        # Project scores for the day
         day_project = db.query(func.avg(models.Resume.project_quality_score)).filter(
             models.Resume.user_id == current_user.id,
             func.date(models.Resume.created_at) == target_date
         ).scalar()
         project_trend.append({"day": day_str, "score": int(day_project) if day_project else 0})
         
-        # Hiring probability for the day
         day_hiring = db.query(func.avg(models.Resume.hiring_probability)).filter(
             models.Resume.user_id == current_user.id,
             func.date(models.Resume.created_at) == target_date
@@ -467,6 +505,8 @@ def get_user_stats(db: Session = Depends(get_db), current_user: models.User = De
         "avg_technical_score": round(avg_technical),
         "avg_project_score": round(avg_project),
         "avg_hiring_probability": round(avg_hiring),
+        "avg_communication_score": round(avg_comm),
+        "avg_skill_relevance": round(avg_skill),
         "lineData": line_data,
         "radarData": radar_data,
         "technicalTrend": technical_trend,

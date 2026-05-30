@@ -1,6 +1,23 @@
 "use client";
 import { AnimatePresence, motion } from 'framer-motion';
-import { Briefcase, Download, FilePlus, FileText, RefreshCw, X, Zap } from 'lucide-react';
+import { 
+  Briefcase, 
+  Download, 
+  FilePlus, 
+  FileText, 
+  RefreshCw, 
+  X, 
+  Zap, 
+  Sparkles, 
+  ChevronRight, 
+  Search, 
+  BarChart2, 
+  User, 
+  Lightbulb, 
+  Rocket, 
+  ChevronDown,
+  TrendingUp
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import ImprovementPlan from '../../components/resume/ImprovementPlan';
@@ -46,6 +63,52 @@ function useCountUp(target, duration = 1000) {
 
 export { useCountUp };
 
+// Upgraded floating CSS graphic
+const ATSGraphic = () => (
+  <div className="relative w-64 h-36 flex items-center justify-center select-none animate-float hidden lg:flex shrink-0">
+    {/* Ambient Glow */}
+    <div className="absolute inset-0 bg-[#6366f1]/8 rounded-full blur-3xl pointer-events-none" />
+
+    {/* ATS Score badge floating on left */}
+    <div className="absolute left-0 top-6 bg-[#070611]/90 backdrop-blur-md p-3.5 rounded-2xl border border-[#6366f1]/25 shadow-2xl flex items-center gap-3.5 rotate-[-8deg] z-20 scale-[0.85] shadow-[0_15px_30px_-5px_rgba(99,102,241,0.25)]">
+      <div className="w-11 h-11 rounded-full border-2 border-teal-500/80 flex flex-col items-center justify-center bg-black/40 shadow-[0_0_12px_rgba(20,184,166,0.3)]">
+        <span className="text-xs font-black text-teal-400">92</span>
+      </div>
+      <div>
+        <p className="text-[10px] font-black text-white uppercase tracking-wider">ATS Score</p>
+        <p className="text-[8px] text-teal-400 font-bold">Excellent match</p>
+      </div>
+    </div>
+
+    {/* Resume Document card floating on right */}
+    <div className="absolute right-3 top-2 bg-slate-800/95 backdrop-blur-md p-5 rounded-2xl border border-white/5 shadow-2xl w-44 rotate-[6deg] z-10 shadow-[0_15px_35px_-5px_rgba(0,0,0,0.6)]">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-2 h-2 rounded-full bg-teal-500 shadow-[0_0_6px_#14b8a6]" />
+        <div className="w-14 h-1.5 bg-slate-700/80 rounded-full" />
+      </div>
+      <div className="space-y-2">
+        <div className="w-full h-1 bg-slate-800 rounded-full" />
+        <div className="w-[85%] h-1 bg-slate-800 rounded-full" />
+        <div className="w-[90%] h-1 bg-slate-800 rounded-full" />
+        <div className="w-[65%] h-1 bg-slate-800 rounded-full" />
+      </div>
+      
+      {/* Miniature column chart inside document */}
+      <div className="flex items-end justify-between gap-1 mt-4 h-6 border-b border-white/5">
+        <span className="w-2.5 bg-teal-500/30 h-2 rounded-t-sm" />
+        <span className="w-2.5 bg-teal-500/50 h-3.5 rounded-t-sm" />
+        <span className="w-2.5 bg-teal-500 h-5 rounded-t-sm shadow-[0_0_5px_rgba(20,184,166,0.4)]" />
+        <span className="w-2.5 bg-blue-500 h-3 rounded-t-sm" />
+      </div>
+    </div>
+    
+    {/* Micro star sparkles */}
+    <div className="absolute right-2 top-10 w-6 h-6 rounded-full bg-amber-500/10 flex items-center justify-center border border-amber-500/30 text-amber-400 shadow-md rotate-12 animate-pulse">
+      <Sparkles size={10} />
+    </div>
+  </div>
+);
+
 export default function ResumeAnalyzer() {
   const { user } = useAuth();
   const router = useRouter();
@@ -68,63 +131,60 @@ export default function ResumeAnalyzer() {
   const downloadReport = async () => {
     if (!result || !result.resume_id) return;
     try {
-      // const response = await api.get(`/resume/${result.resume_id}/report`);
-      // const reportData = response.data;
-      const response = await api.get(
-  `/api/v1/resume/${result.resume_id}/report`
-);
-      
-      // Create a comprehensive text report
-      let report = `INTELLIHIRE AI - RESUME ANALYSIS REPORT\n`;
-      report += `========================================\n\n`;
-      report += `Generated on: ${new Date().toLocaleString()}\n`;
-      report += `Target Role: ${targetRole}\n\n`;
-      
-      report += `SCORES SUMMARY:\n`;
-      report += `---------------\n`;
-      report += `ATS Score: ${result.atsScore}/100\n`;
-      report += `Recruiter Score: ${result.recruiterScore}/100\n`;
-      report += `Technical Strength: ${result.technicalStrengthScore}/100\n`;
-      report += `Project Quality: ${result.projectQualityScore}/100\n`;
-      report += `Hiring Probability: ${result.hiringProbability}/100\n\n`;
-      
-      report += `OVERALL VERDICT:\n`;
-      report += `${result.overallVerdict}\n\n`;
-      
-      report += `RECRUITER FIRST IMPRESSION:\n`;
-      report += `"${result.recruiterFirstImpression}"\n\n`;
-      
-      if (result.sectionAnalysis) {
-        report += `SECTION ANALYSIS:\n`;
-        report += `-----------------\n`;
-        Object.entries(result.sectionAnalysis).forEach(([section, data]) => {
-          report += `${section.toUpperCase()}: ${data.score}/100\n`;
-          if (data.strengths?.length) report += `  Strengths: ${data.strengths.join(', ')}\n`;
-          if (data.weaknesses?.length) report += `  Weaknesses: ${data.weaknesses.join(', ')}\n`;
-          if (data.suggestions?.length) report += `  Suggestions: ${data.suggestions.join(', ')}\n`;
-          report += `\n`;
-        });
-      }
-      
-      if (result.improvementRoadmap?.length) {
-        report += `IMPROVEMENT ROADMAP:\n`;
-        report += `--------------------\n`;
-        result.improvementRoadmap.forEach(item => {
-          report += `• ${item.priority}: ${item.action} (${item.timeToComplete})\n`;
-          report += `  Impact: ${item.impact}\n\n`;
-        });
-      }
-      
-      // Download as text file
-      const blob = new Blob([report], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `IntelliHire_Resume_Report_${targetRole.replace(/\s+/g, '_')}.txt`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      const { jsPDF } = await import('jspdf');
+      await import('jspdf-autotable');
+
+      const doc = new jsPDF();
+      doc.setFont('helvetica');
+
+      doc.setFontSize(22);
+      doc.setTextColor(79, 70, 229);
+      doc.text('IntelliHire AI - Resume Report', 14, 20);
+
+      doc.setFontSize(11);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 28);
+      doc.text(`Target Role: ${targetRole}`, 14, 34);
+
+      doc.setFontSize(14);
+      doc.setTextColor(20, 20, 20);
+      doc.text('Score Breakdown', 14, 45);
+
+      const tScore = result.technicalStrengthScore || result.technicalStrength || result.technical_strength_score || 0;
+      const pScore = result.projectQualityScore || result.projectQuality || result.project_quality_score || 0;
+      const hProb = result.hiringProbability || result.hiring_probability || 0;
+
+      doc.autoTable({
+        startY: 50,
+        head: [['Metric', 'Score (out of 100)']],
+        body: [
+          ['ATS Score', result.atsScore || result.ats_score || 0],
+          ['Recruiter Score', result.recruiterScore || result.recruiter_score || 0],
+          ['Technical Strength', tScore],
+          ['Project Quality', pScore],
+          ['Hiring Probability', hProb]
+        ],
+        theme: 'grid',
+        headStyles: { fillColor: [79, 70, 229] }
+      });
+
+      let nextY = doc.lastAutoTable.finalY + 15;
+
+      doc.setFontSize(14);
+      doc.text('Overall Verdict', 14, nextY);
+      doc.setFontSize(11);
+      const splitVerdict = doc.splitTextToSize(result.overallVerdict || 'N/A', 180);
+      doc.text(splitVerdict, 14, nextY + 7);
+
+      nextY += (splitVerdict.length * 6) + 15;
+
+      doc.setFontSize(14);
+      doc.text('Recruiter First Impression', 14, nextY);
+      doc.setFontSize(11);
+      const splitImpression = doc.splitTextToSize(`"${result.recruiterFirstImpression || 'N/A'}"`, 180);
+      doc.text(splitImpression, 14, nextY + 7);
+
+      doc.save(`IntelliHire_Resume_Report_${targetRole.replace(/\s+/g, '_')}.pdf`);
     } catch (err) {
       console.error('Failed to download report:', err);
     }
@@ -182,169 +242,281 @@ export default function ResumeAnalyzer() {
   }, [file, targetRole, inputMode, runAnalysis]);
 
   if (!user) return (
-    <div style={{ minHeight: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20, textAlign: 'center' }}>
-      <div className="glass" style={{ width: 80, height: 80, borderRadius: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#818cf8' }}><FileText size={40} /></div>
-      <h2 style={{ fontSize: 24, fontWeight: 800 }}>Sign in to analyze your resume</h2>
-      <p style={{ color: '#64748b', maxWidth: 360 }}>Get enterprise-grade AI resume intelligence powered by Gemini.</p>
-      <div style={{ display: 'flex', gap: 12 }}>
-        <button onClick={() => router.push('/login')} className="btn-primary">Sign In</button>
-        <button onClick={() => router.push('/register')} className="btn-secondary">Create Account</button>
+    <div className="min-h-[75vh] flex flex-col items-center justify-center gap-6 text-center max-w-md mx-auto fade-in">
+      <div className="w-16 h-16 rounded-2xl bg-teal-500/10 border border-teal-500/25 flex items-center justify-center text-teal-400 shadow-xl animate-float">
+        <FileText size={32} />
+      </div>
+      <div className="space-y-2">
+        <h2 className="text-2xl font-extrabold text-white font-sans">Sign in to analyze your resume</h2>
+        <p className="text-sm text-slate-400 font-semibold leading-relaxed">Get enterprise-grade AI resume intelligence powered by Gemini.</p>
+      </div>
+      <div className="flex gap-4.5 w-full mt-3">
+        <button onClick={() => router.push('/login')} className="btn-primary flex-1">Sign In</button>
+        <button onClick={() => router.push('/register')} className="btn-secondary flex-1">Create Account</button>
       </div>
     </div>
   );
 
   return (
-    <div style={{ paddingTop: 32, paddingBottom: 60 }}>
-      {/* Header */}
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} style={{ textAlign: 'center', marginBottom: 40 }}>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 18px', borderRadius: 999, background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.25)', color: '#818cf8', fontSize: 13, fontWeight: 600, marginBottom: 16 }}>
-          <Zap size={14} /> Enterprise AI Resume Intelligence Engine
-          {isAnalyzing && <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#34d399', display: 'inline-block', animation: 'glowPulse 1s infinite' }} />}
-        </div>
-        <h1 className="gradient-text" style={{ fontSize: 40, fontWeight: 900, marginBottom: 12 }}>AI Resume Analyzer</h1>
-        <p style={{ color: '#94a3b8', fontSize: 15, maxWidth: 560, margin: '0 auto' }}>
-          Deep line-by-line analysis. Real-time ATS scoring. Recruiter simulation. Powered by Gemini AI.
-        </p>
-      </motion.div>
+    <div className="py-6 space-y-6 fade-in max-w-7xl mx-auto">
+      
+      {/* ─── Premium Header Banner ─── */}
+      <div className="glass-premium p-8 md:p-10 border border-slate-700/50 bg-slate-800/50 shadow-2xl relative flex flex-col md:flex-row items-center justify-between gap-8 overflow-hidden rounded-[2.5rem]">
+        {/* Glow Circles */}
+        <div className="absolute top-[-50%] left-[-10%] w-[380px] h-[380px] bg-teal-600/15 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute bottom-[-30%] right-[10%] w-[300px] h-[300px] bg-blue-600/10 rounded-full blur-[90px] pointer-events-none" />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: 24, alignItems: 'start' }}>
-        {/* LEFT — Input Panel */}
-        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {/* Role */}
-          <div className="glass" style={{ padding: 20 }}>
-            <label className="label" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-              <Briefcase size={15} style={{ color: '#818cf8' }} /> Target Job Role
-            </label>
-            <input type="text" value={targetRole} onChange={e => setTargetRole(e.target.value)}
-              className="input-field" placeholder="e.g. Software Engineer" list="roles-list" />
-            <datalist id="roles-list">{ROLES.map(r => <option key={r} value={r} />)}</datalist>
+        <div className="flex-1 space-y-3 text-center md:text-left relative z-10">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/10 border border-teal-500/25 text-teal-300 font-extrabold text-[10px] uppercase tracking-widest shadow-md">
+            <Sparkles size={12} className="animate-spin-slow" /> AI-Powered
+          </div>
+          
+          <h1 className="text-3xl md:text-4xl font-black tracking-tight text-white leading-tight font-sans">
+            AI <span className="text-teal-400">Resume Analyzer</span>
+          </h1>
+          <p className="text-slate-300 max-w-xl text-sm font-semibold leading-relaxed">
+            Deep line-by-line analysis. Real-time ATS scoring. Recruiter simulation. Powered by Gemini AI.
+          </p>
+        </div>
+
+        {/* Floating CSS illustration */}
+        <ATSGraphic />
+      </div>
+
+      {/* Grid container for left Workspace & right Panels */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        
+        {/* ─── LEFT: Input Workspace ─── */}
+        <div className="lg:col-span-1 space-y-6">
+          
+          {/* Target Role selection (Step 1) */}
+          <div className="glass-premium p-6 border border-slate-700/50 shadow-lg relative rounded-[1.5rem]">
+            <div className="flex items-center gap-2.5 mb-3">
+              <span className="w-5 h-5 rounded-full bg-teal-500 text-white font-extrabold text-[10px] flex items-center justify-center shrink-0 shadow-md">
+                1
+              </span>
+              <h3 className="text-sm font-extrabold text-white tracking-wide flex items-center gap-2 font-sans">
+                <Briefcase size={14} className="text-teal-400" /> Target Job Role
+              </h3>
+            </div>
+            
+            <div className="custom-select-wrap">
+              <Briefcase className="input-icon" size={15} />
+              <select
+                value={targetRole}
+                onChange={e => setTargetRole(e.target.value)}
+                className="input-field cursor-pointer font-semibold appearance-none pr-10 py-2.5"
+              >
+                {ROLES.map(r => (
+                  <option key={r} value={r} className="bg-[#0b0a1a] text-white">{r}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-4 text-slate-500 pointer-events-none" size={14} />
+            </div>
           </div>
 
-          {/* Mode + Input */}
-          <div className="glass" style={{ padding: 20 }}>
-            <div style={{ display: 'flex', gap: 6, background: '#0f172a', padding: 4, borderRadius: 12, marginBottom: 16 }}>
-              {['✏️ Paste Text', '📎 Upload File'].map((label, i) => {
-                const m = i === 0 ? 'text' : 'file';
-                return (
-                  <button key={m} onClick={() => setInputMode(m)} style={{
-                    flex: 1, padding: '8px 4px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: 'none', transition: 'all 0.2s',
-                    background: inputMode === m ? 'linear-gradient(135deg,#4f46e5,#7c3aed)' : 'transparent',
-                    color: inputMode === m ? 'white' : '#64748b',
-                  }}>{label}</button>
-                );
-              })}
+          {/* Upload Resume Container (Step 2) */}
+          <div className="glass-premium p-6 border border-slate-700/50 shadow-lg relative rounded-[1.5rem]">
+            <div className="flex items-center gap-2.5 mb-3">
+              <span className="w-5 h-5 rounded-full bg-teal-500 text-white font-extrabold text-[10px] flex items-center justify-center shrink-0 shadow-md">
+                2
+              </span>
+              <h3 className="text-sm font-extrabold text-white tracking-wide flex items-center gap-2 font-sans">
+                <FileText size={14} className="text-teal-400" /> Upload Resume
+              </h3>
             </div>
 
-            {inputMode === 'text' ? (
-              <div>
-                <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 12 }}>
-                  <textarea value={resumeText} onChange={e => { setResumeText(e.target.value); }}
-                    className="input-field" style={{ height: 420, resize: 'vertical', fontFamily: 'monospace', fontSize: 11, lineHeight: 1.7, borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }}
-                    placeholder="Paste your complete resume here...&#10;&#10;AI begins scanning automatically 2 seconds after you stop typing (100+ characters needed)." />
-                  
-                  <AnimatePresence>
-                    {isAnalyzing && (
-                      <motion.div 
-                        initial={{ top: '0%' }}
-                        animate={{ top: '100%' }}
-                        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                        style={{ position: 'absolute', left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, transparent, #818cf8, transparent)', boxShadow: '0 0 15px #818cf8', zIndex: 10, pointerEvents: 'none' }}
-                      />
-                    )}
-                  </AnimatePresence>
+            {/* Paste/Upload Tabs Toggle */}
+            <div className="flex gap-1 bg-[#03030a] p-1.5 rounded-xl border border-white/5 mb-4">
+              {[
+                { label: '✏️ Paste Text', mode: 'text' },
+                { label: '📎 Upload File', mode: 'file' }
+              ].map((tab) => (
+                <button
+                  key={tab.mode}
+                  onClick={() => setInputMode(tab.mode)}
+                  className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold cursor-pointer transition-all duration-300 ${
+                    inputMode === tab.mode 
+                      ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md border-t border-white/10' 
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
 
-                  <div style={{ 
-                    display: 'flex', gap: 16, padding: '8px 16px', background: 'rgba(15, 23, 42, 0.9)', 
-                    border: '1px solid rgba(255, 255, 255, 0.08)', borderTop: 'none', 
-                    borderBottomLeftRadius: 12, borderBottomRightRadius: 12 
-                  }}>
-                    <div style={{ fontSize: 11, color: '#64748b' }}>
-                      Words: <span style={{ color: '#cbd5e1', fontWeight: 700 }}>{localStats.words}</span>
-                    </div>
-                    <div style={{ fontSize: 11, color: '#64748b' }}>
-                      Match: <span style={{ color: localStats.keywords > 0 ? '#34d399' : '#64748b', fontWeight: 700 }}>{localStats.keywords}/{localStats.totalKeywords}</span>
-                    </div>
-                    <div style={{ fontSize: 11, color: '#64748b', marginLeft: 'auto' }}>
-                      {resumeText.length} chars {resumeText.length >= 100 ? '✓ Ready' : `(${100 - resumeText.length} more)`}
-                    </div>
+            {/* Paste mode layout */}
+            {inputMode === 'text' ? (
+              <div className="space-y-3">
+                <div className="relative overflow-hidden rounded-xl border border-white/5 bg-[#03030a]">
+                  <textarea 
+                    value={resumeText} 
+                    onChange={e => setResumeText(e.target.value)}
+                    className="w-full bg-transparent p-3 text-[11px] text-slate-300 font-mono leading-relaxed outline-none min-h-[160px] resize-y"
+                    placeholder="Paste your complete resume here... Make sure to include all sections for accurate analysis." 
+                  />
+                  
+                  {isAnalyzing && (
+                    <motion.div 
+                      className="absolute left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-indigo-500 to-transparent shadow-[0_0_12px_#6366f1]"
+                      initial={{ top: '0%' }}
+                      animate={{ top: '100%' }}
+                      transition={{ duration: 2.2, repeat: Infinity, ease: "linear" }}
+                    />
+                  )}
+
+                  {/* Character trackers */}
+                  <div className="flex items-center gap-3 px-3 py-1.5 border-t border-white/[0.04] bg-white/[0.01] text-[9px] text-slate-500 font-semibold font-sans">
+                    <div>Words: <span className="text-slate-300 font-extrabold">{localStats.words}</span></div>
+                    <div>Keywords: <span className="text-teal-400 font-extrabold">{localStats.keywords}/{localStats.totalKeywords}</span></div>
+                    <div className="ml-auto">{resumeText.length} / 20,000</div>
                   </div>
                 </div>
+
                 {resumeText.length >= 100 && (
-                  <div style={{ marginTop: 10, padding: '8px 12px', borderRadius: 10, background: isAnalyzing ? 'rgba(99,102,241,0.1)' : 'rgba(52,211,153,0.08)', border: `1px solid ${isAnalyzing ? 'rgba(99,102,241,0.3)' : 'rgba(52,211,153,0.2)'}`, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    {isAnalyzing
-                      ? <><RefreshCw size={13} style={{ color: '#818cf8', animation: 'spin 1s linear infinite' }} /><span style={{ fontSize: 12, color: '#818cf8', fontWeight: 600 }}>{scanStage}</span></>
-                      : <><span style={{ fontSize: 12, color: '#34d399', fontWeight: 600 }}>✓ {lastUpdated ? `Updated at ${lastUpdated}` : 'Ready to scan'}</span></>
-                    }
+                  <div className="p-2.5 rounded-xl border flex items-center gap-2 bg-indigo-500/5 border-indigo-500/15">
+                    {isAnalyzing ? (
+                      <>
+                        <RefreshCw size={11} className="text-indigo-400 animate-spin" />
+                        <span className="text-[11px] font-bold text-indigo-400 leading-none">{scanStage}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="w-1.5 h-1.5 rounded-full bg-teal-500 shadow-[0_0_6px_#14b8a6]" />
+                        <span className="text-[11px] font-bold text-teal-400 leading-none">
+                          {lastUpdated ? `Updated at ${lastUpdated}` : 'Ready to analyze'}
+                        </span>
+                      </>
+                    )}
                   </div>
                 )}
+
+                {/* Clean Analyze Trigger button */}
+                <button 
+                  disabled={isAnalyzing || resumeText.length < 100}
+                  onClick={() => runAnalysis(resumeText, targetRole, null, 'text')}
+                  className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-extrabold text-xs border-t transition-all ${
+                    resumeText.length >= 100 
+                      ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 text-white cursor-pointer shadow-lg border-white/10'
+                      : 'bg-white/5 border-white/[0.02] text-slate-600 cursor-not-allowed'
+                  }`}
+                >
+                  <Sparkles size={14} /> Analyze Resume
+                </button>
               </div>
             ) : (
-              <div onDragOver={e => { e.preventDefault(); setIsDragging(true); }} onDragLeave={() => setIsDragging(false)} onDrop={handleDrop}
-                onClick={() => fileInputRef.current?.click()}
-                style={{ border: `2px dashed ${isDragging ? '#818cf8' : file ? '#34d399' : '#334155'}`, borderRadius: 16, padding: '48px 24px', textAlign: 'center', cursor: 'pointer', background: file ? 'rgba(52,211,153,0.04)' : 'transparent', transition: 'all 0.3s' }}>
-                <input ref={fileInputRef} type="file" accept=".pdf,.txt" style={{ display: 'none' }} onChange={e => { const f = e.target.files[0]; if (f) { setFile(f); setError(''); } }} />
-                {file ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-                    <FileText size={40} style={{ color: '#34d399' }} />
-                    <div><p style={{ fontWeight: 700, color: 'white', fontSize: 14 }}>{file.name}</p><p style={{ fontSize: 12, color: '#64748b' }}>{(file.size / 1024).toFixed(1)} KB</p></div>
-                    {isAnalyzing && <div style={{ fontSize: 12, color: '#818cf8', fontWeight: 600 }}>{scanStage}</div>}
-                    <button onClick={e => { e.stopPropagation(); setFile(null); setResult(null); }} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#f87171', background: 'none', border: 'none', cursor: 'pointer' }}>
-                      <X size={12} /> Remove
-                    </button>
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-                    <FilePlus size={40} style={{ color: '#334155' }} className="animate-float" />
-                    <p style={{ fontWeight: 700, color: 'white', fontSize: 14 }}>Drop PDF or TXT</p>
-                    <p style={{ fontSize: 12, color: '#475569' }}>Auto-scans immediately on upload</p>
-                    <div style={{ padding: '6px 16px', borderRadius: 999, background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', fontSize: 12, color: '#818cf8', fontWeight: 600 }}>
-                      Browse Files
+              /* File drag-and-drop upload mode */
+              <div className="space-y-4">
+                <div 
+                  onDragOver={e => { e.preventDefault(); setIsDragging(true); }} 
+                  onDragLeave={() => setIsDragging(false)} 
+                  onDrop={handleDrop}
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all ${
+                    isDragging 
+                      ? 'border-indigo-500 bg-indigo-500/5' 
+                      : file 
+                        ? 'border-teal-500/40 bg-teal-500/[0.01]' 
+                        : 'border-white/10 hover:border-white/20 bg-white/[0.01]'
+                  }`}
+                >
+                  <input ref={fileInputRef} type="file" accept=".pdf,.txt" style={{ display: 'none' }} onChange={e => { const f = e.target.files[0]; if (f) { setFile(f); setError(''); } }} />
+                  
+                  {file ? (
+                    <div className="flex flex-col items-center gap-3">
+                      <FileText size={42} className="text-teal-400" />
+                      <div>
+                        <p className="text-xs font-extrabold text-white truncate max-w-[200px]">{file.name}</p>
+                        <p className="text-[10px] text-slate-500 font-bold mt-0.5">{(file.size / 1024).toFixed(1)} KB</p>
+                      </div>
+                      
+                      {isAnalyzing && <div className="text-xs font-bold text-indigo-400 animate-pulse mt-2">{scanStage}</div>}
+                      
+                      <button 
+                        onClick={e => { e.stopPropagation(); setFile(null); setResult(null); }} 
+                        className="flex items-center gap-1.5 text-xs font-bold text-red-400 bg-none border-none cursor-pointer hover:text-red-300 mt-2"
+                      >
+                        <X size={12} /> Remove
+                      </button>
                     </div>
-                  </div>
-                )}
+                  ) : (
+                    <div className="flex flex-col items-center gap-3.5">
+                      <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-slate-400 border border-white/10 animate-pulse">
+                        <FilePlus size={22} />
+                      </div>
+                      <div>
+                        <p className="text-xs font-extrabold text-white">Drag & drop PDF / TXT</p>
+                        <p className="text-[10px] text-slate-500 font-bold mt-1">Auto-scans immediately on upload</p>
+                      </div>
+                      <div className="px-4 py-2 mt-2 text-xs font-bold text-indigo-300 border border-indigo-500/20 bg-indigo-500/5 rounded-xl hover:bg-indigo-500/10">
+                        Browse Files
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
 
-          {error && <div style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', fontSize: 13 }}>⚠️ {error}</div>}
+          {error && <div className="p-4 rounded-xl border border-red-500/15 bg-red-500/5 text-red-400 text-xs font-semibold leading-relaxed">⚠️ {error}</div>}
 
           {result && (
-            <button onClick={() => { setResult(null); setResumeText(''); setFile(null); setLastUpdated(''); }} className="btn-secondary" style={{ width: '100%', marginTop: 4 }}>
-              <RefreshCw size={14} /> Clear & Restart
+            <button 
+              onClick={() => { setResult(null); setResumeText(''); setFile(null); setLastUpdated(''); }} 
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-white/10 hover:border-white/20 bg-white/5 hover:bg-white/10 text-xs font-bold text-slate-300 cursor-pointer transition-colors"
+            >
+              <RefreshCw size={13} /> Clear & Restart
             </button>
           )}
-        </motion.div>
+        </div>
 
-        {/* RIGHT — Results */}
-        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
+        {/* ─── RIGHT: Analysis Dashboard Results ─── */}
+        <div className="lg:col-span-2">
           <AnimatePresence mode="wait">
-            {/* Scanning animation */}
+            
+            {/* Running loader screen */}
             {isAnalyzing && !result && (
-              <motion.div key="scanning" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                className="glass" style={{ padding: 60, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 32, minHeight: 500 }}>
-                <div style={{ position: 'relative' }}>
-                  <div style={{ width: 90, height: 90, borderRadius: '50%', border: '4px solid rgba(99,102,241,0.1)', borderTop: '4px solid #6366f1', borderRight: '4px solid #a855f7', animation: 'spin 1s linear infinite' }} />
-                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>🧠</div>
+              <motion.div 
+                key="scanning" 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                exit={{ opacity: 0 }}
+                className="glass-premium p-12 border border-white/5 shadow-xl flex flex-col items-center justify-center gap-8 min-h-[500px]"
+              >
+                <div className="relative">
+                  {/* Rotating loader ring */}
+                  <div className="w-20 h-20 rounded-full border-4 border-indigo-500/10 border-t-indigo-500 border-r-purple-500 animate-spin" />
+                  <div className="absolute inset-0 flex items-center justify-center text-3xl select-none">🧠</div>
                 </div>
-                <div style={{ textAlign: 'center', width: '100%', maxWidth: 300 }}>
-                  <h3 style={{ fontWeight: 800, color: 'white', marginBottom: 8, fontSize: 20 }}>Deep AI Analysis Running</h3>
-                  <p style={{ color: '#818cf8', fontWeight: 600, fontSize: 14, marginBottom: 12 }}>{scanStage}</p>
+
+                <div className="text-center space-y-3 max-w-sm">
+                  <h3 className="text-xl font-extrabold text-white font-sans">Deep AI Analysis Running</h3>
+                  <p className="text-sm font-bold text-indigo-400 animate-pulse">{scanStage}</p>
                   
-                  {/* Dynamic Progress Bar */}
-                  <div style={{ height: 6, width: '100%', background: 'rgba(255,255,255,0.05)', borderRadius: 99, overflow: 'hidden', marginBottom: 16 }}>
+                  {/* Glowing progress line */}
+                  <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden relative border border-white/[0.02]">
                     <motion.div 
+                      className="h-full bg-gradient-to-r from-indigo-500 via-indigo-500 to-indigo-600 shadow-[0_0_10px_rgba(99,102,241,0.5)]"
                       initial={{ width: '0%' }}
                       animate={{ width: '100%' }}
                       transition={{ duration: 12, ease: "linear" }}
-                      style={{ height: '100%', background: 'linear-gradient(90deg, #4f46e5, #a855f7)', boxShadow: '0 0 10px rgba(99,102,241,0.5)' }}
                     />
                   </div>
-                  
-                  <p style={{ color: '#475569', fontSize: 13 }}>Analyzing for: {targetRole}</p>
+                  <p className="text-xs text-slate-500 font-semibold">Analyzing for target role: {targetRole}</p>
                 </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center', maxWidth: 400 }}>
-                  {['Line-by-line scan','Keyword detection','Project analysis','Skill evaluation','ATS engine','Recruiter simulation'].map((s, i) => (
-                    <span key={s} style={{ padding: '5px 12px', borderRadius: 999, background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', fontSize: 11, color: '#818cf8', fontWeight: 600 }}>
+
+                {/* Sub-stages indicators */}
+                <div className="flex flex-wrap gap-2.5 justify-center max-w-md mt-2">
+                  {[
+                    'Line-by-line scan',
+                    'Keyword detection',
+                    'Project analysis',
+                    'Skill evaluation',
+                    'ATS engine',
+                    'Recruiter simulation'
+                  ].map((s) => (
+                    <span key={s} className="px-3 py-1.5 rounded-xl border border-indigo-500/15 bg-indigo-500/5 text-[10px] font-bold text-indigo-300">
                       ⚙️ {s}
                     </span>
                   ))}
@@ -352,67 +524,80 @@ export default function ResumeAnalyzer() {
               </motion.div>
             )}
 
-            {/* Empty state */}
+            {/* Empty landing landing workspace dashboard layout */}
             {!result && !isAnalyzing && (
-              <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                className="glass" style={{ padding: 60, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 24, minHeight: 500, textAlign: 'center' }}>
-                <div className="animate-float" style={{ fontSize: 60 }}>🎯</div>
-                <div>
-                  <h3 style={{ fontWeight: 800, color: 'white', fontSize: 22, marginBottom: 8 }}>Enterprise AI Ready</h3>
-                  <p style={{ color: '#475569', maxWidth: 360, fontSize: 14, lineHeight: 1.7 }}>
-                    Paste your resume on the left. Our AI will perform deep line-by-line analysis, ATS scoring, project evaluation, and recruiter simulation — all in real-time.
-                  </p>
+              <motion.div 
+                key="empty" 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                exit={{ opacity: 0 }}
+                className="glass-premium p-6 md:p-8 border border-slate-700/50 shadow-xl flex flex-col items-center justify-center gap-6 min-h-[420px]"
+              >
+                {/* Visual anchor logo */}
+                <div className="w-16 h-16 rounded-2xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400 text-2xl shadow-xl animate-float font-sans font-black">
+                  <BarChart2 size={32} />
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, width: '100%', maxWidth: 380 }}>
-                  {[['🔍','Line-by-line scan'],['📊','ATS Engine'],['🎭','Recruiter AI'],['💡','Skill Gap'],['🚀','Project Rating'],['🗺️','Growth Path']].map(([e,l]) => (
-                    <div key={l} className="glass" style={{ padding: '14px 8px', borderRadius: 12, textAlign: 'center' }}>
-                      <div style={{ fontSize: 22, marginBottom: 4 }}>{e}</div>
-                      <p style={{ fontSize: 11, color: '#475569', fontWeight: 600 }}>{l}</p>
-                    </div>
-                  ))}
+                
+                <div className="text-center space-y-4 max-w-sm">
+                  <h3 className="text-2xl font-extrabold text-white font-sans">Ready to Analyze</h3>
+                  <p className="text-sm text-slate-400 font-semibold leading-relaxed">
+                    Paste your resume text or upload a PDF on the left panel to begin. Our AI will instantly scan your resume against your selected target role and provide actionable insights.
+                  </p>
                 </div>
               </motion.div>
             )}
 
-            {/* Results */}
+            {/* Results workspace tabs */}
             {result && (
-              <motion.div key="result" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
-                {/* Tab Bar */}
-                <div style={{ display: 'flex', gap: 4, overflowX: 'auto', marginBottom: 20, padding: '4px 0' }}>
+              <motion.div key="result" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+                
+                {/* Tab selector bar */}
+                <div className="flex flex-wrap gap-3 pb-2 items-center">
                   {TABS.map((tab, i) => (
-                    <button key={tab} onClick={() => setActiveTab(i)} style={{
-                      padding: '8px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: 'none', whiteSpace: 'nowrap', transition: 'all 0.2s',
-                      background: activeTab === i ? 'linear-gradient(135deg,#4f46e5,#7c3aed)' : 'rgba(255,255,255,0.04)',
-                      color: activeTab === i ? 'white' : '#64748b',
-                      boxShadow: activeTab === i ? '0 4px 15px rgba(99,102,241,0.3)' : 'none',
-                    }}>{tab}</button>
+                    <button 
+                      key={tab} 
+                      onClick={() => setActiveTab(i)} 
+                      className={`px-5 py-2.5 rounded-xl text-sm font-bold cursor-pointer transition-all duration-300 shrink-0 ${
+                        activeTab === i 
+                          ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-lg border-t border-white/10' 
+                          : 'bg-white/5 border border-white/5 text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      {tab}
+                    </button>
                   ))}
-                  <button onClick={downloadReport} style={{
-                    padding: '8px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: 'none', whiteSpace: 'nowrap', transition: 'all 0.2s',
-                    background: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)',
-                    display: 'flex', alignItems: 'center', gap: 6
-                  }}>
-                    <Download size={14} /> Download Report
+                  
+                  {/* Download button */}
+                  <button 
+                    onClick={downloadReport} 
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold cursor-pointer border bg-teal-500/10 border-teal-500/35 hover:bg-teal-500/20 text-teal-400 shrink-0 transition-colors ml-auto shadow-md hover:shadow-lg"
+                  >
+                    <Download size={15} /> Download Report
                   </button>
-                  {isAnalyzing && <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', borderRadius: 10, background: 'rgba(99,102,241,0.1)', fontSize: 12, color: '#818cf8', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                    <RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} /> Re-analyzing...
-                  </div>}
+
+                  {isAnalyzing && (
+                    <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-sm font-bold text-indigo-400 shrink-0 select-none">
+                      <RefreshCw size={14} className="animate-spin" /> Re-analyzing...
+                    </div>
+                  )}
                 </div>
 
-                <AnimatePresence mode="wait">
-                  {activeTab === 0 && <motion.div key="t0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><ScoreOverview data={result} /></motion.div>}
-                  {activeTab === 1 && <motion.div key="t1" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><SectionAnalysis data={result} /></motion.div>}
-                  {activeTab === 2 && <motion.div key="t2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><ProjectAnalysis data={result} /></motion.div>}
-                  {activeTab === 3 && <motion.div key="t3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><SkillAnalysis data={result} /></motion.div>}
-                  {activeTab === 4 && <motion.div key="t4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><RecruiterView data={result} /></motion.div>}
-                  {activeTab === 5 && <motion.div key="t5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><ImprovementPlan data={result} /></motion.div>}
-                </AnimatePresence>
+                {/* Sub panels contents display */}
+                <div className="glass p-8 border border-white/5 shadow-xl relative rounded-[1.5rem] min-h-[500px]">
+                  <AnimatePresence mode="wait">
+                    {activeTab === 0 && <motion.div key="t0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><ScoreOverview data={result} /></motion.div>}
+                    {activeTab === 1 && <motion.div key="t1" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><SectionAnalysis data={result} /></motion.div>}
+                    {activeTab === 2 && <motion.div key="t2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><ProjectAnalysis data={result} /></motion.div>}
+                    {activeTab === 3 && <motion.div key="t3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><SkillAnalysis data={result} /></motion.div>}
+                    {activeTab === 4 && <motion.div key="t4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><RecruiterView data={result} /></motion.div>}
+                    {activeTab === 5 && <motion.div key="t5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><ImprovementPlan data={result} /></motion.div>}
+                  </AnimatePresence>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
-        </motion.div>
+        </div>
       </div>
-      <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 }

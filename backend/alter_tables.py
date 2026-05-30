@@ -6,6 +6,12 @@ from sqlalchemy import text
 def alter_tables():
     with engine.connect() as conn:
         try:
+            conn.execute(text('ALTER TABLE resumes ADD COLUMN file_name VARCHAR;'))
+            print("Added file_name")
+        except Exception as e:
+            print("file_name error:", e)
+
+        try:
             conn.execute(text('ALTER TABLE resumes ADD COLUMN recruiter_score FLOAT;'))
             print("Added recruiter_score")
         except Exception as e:

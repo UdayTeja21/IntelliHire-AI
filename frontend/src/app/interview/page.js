@@ -1,11 +1,33 @@
 "use client";
 import { AnimatePresence, motion } from 'framer-motion';
-import { BarChart2, Bot, CheckCircle, Download, Mic, PlayCircle, Settings, User } from 'lucide-react';
+import { 
+  BarChart2, 
+  Bot, 
+  CheckCircle, 
+  Download, 
+  Mic, 
+  PlayCircle, 
+  Settings, 
+  User, 
+  Briefcase, 
+  Code, 
+  Signal, 
+  FileText, 
+  Sparkles, 
+  CheckCircle2, 
+  Target, 
+  Clock, 
+  Heart, 
+  Headphones, 
+  HelpCircle,
+  Play,
+  ChevronDown
+} from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import api from '../../lib/api';
 
 // ─── Silence-detection config ────────────────────────────────────────────────
-const SILENCE_DELAY_MS = 2200; // ms of silence before auto-submitting
+const SILENCE_DELAY_MS = 15000; // ms of silence before auto-submitting
 
 export default function Interview() {
   // ── Config phase ──
@@ -50,14 +72,10 @@ export default function Interview() {
   useEffect(() => { isAiSpeakingRef.current = isAiSpeaking; }, [isAiSpeaking]);
 
   // ── Fetch resumes ──
-  // useEffect(() => {
-  //   api.get('/resume/history').then(r => setResumes(r.data)).catch(() => {});
-  // }, []);
   useEffect(() => {
-  api.get('/api/v1/resume/history')
-    .then(r => setResumes(r.data))
-    .catch(() => {});
-}, []);
+    // Load resume history for dropdown
+    api.get('/resume/history').then(r => setResumes(r.data)).catch(() => {});
+  }, []);
 
   // ── Scroll to bottom ──
   useEffect(() => {
@@ -71,7 +89,7 @@ export default function Interview() {
     if (isListening) {
       const animate = () => {
         setBarHeights(prev =>
-          prev.map(() => Math.random() * 36 + 4)
+          prev.map(() => Math.random() * 32 + 4)
         );
         animFrameRef.current = requestAnimationFrame(animate);
       };
@@ -207,9 +225,7 @@ export default function Interview() {
     }
   }, [session, currentIndex]); // eslint-disable-line
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Submit answer
-  // ─────────────────────────────────────────────────────────────────────────
+  // ─── Submit answer ───
   const submitAnswer = useCallback(async (answer) => {
     if (!answer.trim() || isEvaluatingRef.current) return;
 
@@ -246,12 +262,14 @@ export default function Interview() {
     }
   }, [session, currentIndex, config.role, stopListening]);
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Start session
-  // ─────────────────────────────────────────────────────────────────────────
+  // ─── Start session ───
   const startSession = async () => {
+    if (!config.resume_id) {
+      alert('Please upload and select your resume before starting the interview. You can upload it in the ATS section.');
+      return;
+    }
     try {
-      const payload = { ...config, resume_id: config.resume_id ? parseInt(config.resume_id) : null };
+      const payload = { ...config, resume_id: parseInt(config.resume_id) };
       const res = await api.post('/interview/start', payload);
       setSession(res.data);
     } catch {
@@ -259,101 +277,230 @@ export default function Interview() {
     }
   };
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Score colour helper
-  // ─────────────────────────────────────────────────────────────────────────
-  const scoreColor = (s) => s >= 75 ? '#34d399' : s >= 50 ? '#fbbf24' : '#f87171';
+  const scoreColor = (s) => s >= 75 ? '#10b981' : s >= 50 ? '#f59e0b' : '#ef4444';
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // RENDER — Config screen
+  // RENDER — Config screen (Two-column redesign matching mockup)
   // ═══════════════════════════════════════════════════════════════════════════
   if (!session) {
+    const popularRoles = [
+      'Frontend Developer',
+      'Backend Developer',
+      'Full Stack Developer',
+      'Software Engineer',
+      'Data Scientist',
+      'AI/ML Engineer',
+      'DevOps Engineer',
+      'Product Manager',
+      'UI/UX Designer',
+    ];
+
     return (
-      <div className="ih-page fade-in">
-        <div className="ih-config-card">
-          {/* Header */}
-          <div className="ih-config-header">
-            <div className="ih-config-icon">
-              <Settings size={28} />
-            </div>
-            <h1 className="ih-config-title">Configure Interview</h1>
-            <p className="ih-config-sub">Fully voice-driven · Hands-free · AI-powered</p>
-          </div>
+      <div className="py-2 max-w-5xl mx-auto w-full fade-in">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+          
+          {/* LEFT: Configure Interview Card (2 cols) */}
+          <div className="lg:col-span-2 glass-premium p-6 border border-white/5 shadow-2xl relative">
+            {/* Design accents */}
+            <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-500/5 rounded-full blur-3xl pointer-events-none" />
 
-          {/* Form */}
-          <div className="ih-form">
-            <div className="ih-form-group">
-              <label className="ih-label">Job Role</label>
-              <input
-                type="text"
-                value={config.role}
-                onChange={e => setConfig({ ...config, role: e.target.value })}
-                className="ih-input"
-                placeholder="e.g. Frontend Developer"
-              />
-            </div>
-
-            <div className="ih-form-row">
-              <div className="ih-form-group">
-                <label className="ih-label">Interview Type</label>
-                <select
-                  value={config.type}
-                  onChange={e => setConfig({ ...config, type: e.target.value })}
-                  className="ih-input"
-                >
-                  <option>Technical</option>
-                  <option>Behavioral</option>
-                  <option>HR</option>
-                </select>
+            {/* Header */}
+            <div className="flex flex-col items-center text-center mb-5">
+              <div className="w-12 h-12 rounded-full border border-dashed border-indigo-500/50 flex items-center justify-center bg-indigo-500/5 text-indigo-400 mb-2.5 shadow-[0_0_20px_rgba(99,102,241,0.15)] animate-pulse">
+                <Settings size={22} className="text-indigo-400" />
               </div>
-              <div className="ih-form-group">
-                <label className="ih-label">Difficulty</label>
-                <select
-                  value={config.difficulty}
-                  onChange={e => setConfig({ ...config, difficulty: e.target.value })}
-                  className="ih-input"
-                >
-                  <option>Easy</option>
-                  <option>Medium</option>
-                  <option>Hard</option>
-                </select>
-              </div>
+              <h1 className="text-2xl font-extrabold tracking-wide text-white font-sans">Configure Interview</h1>
+              <p className="text-xs text-slate-400 font-semibold tracking-wide mt-1 flex items-center gap-1.5">
+                <span className="w-1 h-1 rounded-full bg-indigo-400"></span> Fully voice-driven
+                <span className="w-1 h-1 rounded-full bg-purple-400"></span> Hands-free
+                <span className="w-1 h-1 rounded-full bg-cyan-400"></span> AI-powered
+              </p>
             </div>
 
-            <div className="ih-form-group">
-              <label className="ih-label">Based on Resume (Optional)</label>
-              <select
-                value={config.resume_id}
-                onChange={e => setConfig({ ...config, resume_id: e.target.value })}
-                className="ih-input"
+            {/* Form Fields */}
+            <div className="space-y-4">
+              {/* Job Role Selection */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Job Role</label>
+                <div className="custom-select-wrap">
+                  <Briefcase className="input-icon" size={15} />
+                  <select
+                    value={config.role}
+                    onChange={e => setConfig({ ...config, role: e.target.value })}
+                    className="input-field cursor-pointer font-semibold appearance-none pr-10 py-2.5"
+                  >
+                    {popularRoles.map(role => (
+                      <option key={role} value={role} className="bg-[#0b0a1a] text-white">{role}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-4 text-slate-500 pointer-events-none" size={16} />
+                </div>
+              </div>
+
+              {/* Grid: Interview Type & Difficulty */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Interview Type */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Interview Type</label>
+                  <div className="custom-select-wrap">
+                    <Code className="input-icon" size={15} />
+                    <select
+                      value={config.type}
+                      onChange={e => setConfig({ ...config, type: e.target.value })}
+                      className="input-field cursor-pointer font-semibold appearance-none pr-10 py-2.5"
+                    >
+                      <option className="bg-[#0b0a1a] text-white">Technical</option>
+                      <option className="bg-[#0b0a1a] text-white">Behavioral</option>
+                      <option className="bg-[#0b0a1a] text-white">HR</option>
+                    </select>
+                    <ChevronDown className="absolute right-4 text-slate-500 pointer-events-none" size={14} />
+                  </div>
+                </div>
+
+                {/* Difficulty */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Difficulty</label>
+                  <div className="custom-select-wrap">
+                    <Signal className="input-icon" size={15} />
+                    <select
+                      value={config.difficulty}
+                      onChange={e => setConfig({ ...config, difficulty: e.target.value })}
+                      className="input-field cursor-pointer font-semibold appearance-none pr-10 py-2.5"
+                    >
+                      <option className="bg-[#0b0a1a] text-white">Easy</option>
+                      <option className="bg-[#0b0a1a] text-white">Medium</option>
+                      <option className="bg-[#0b0a1a] text-white">Hard</option>
+                    </select>
+                    <ChevronDown className="absolute right-4 text-slate-500 pointer-events-none" size={14} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Based on Resume (Optional) */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">Based on Resume</label>
+                <div className="custom-select-wrap">
+                  <FileText className="input-icon" size={15} />
+                  <select
+                    value={config.resume_id}
+                    onChange={e => setConfig({ ...config, resume_id: e.target.value })}
+                    className="input-field cursor-pointer font-semibold appearance-none pr-10 py-2.5"
+                  >
+                    <option value="" disabled className="bg-[#0b0a1a] text-white">— Select Your Resume —</option>
+                    {resumes.map(r => (
+                      <option key={r.id} value={r.id} className="bg-[#0b0a1a] text-white">
+                        Resume #{r.id} — {r.file_name || r.target_role} ({new Date(r.created_at).toLocaleDateString()})
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-4 text-slate-500 pointer-events-none" size={14} />
+                </div>
+              </div>
+
+              {/* Microphone alert card */}
+              <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-indigo-500/5 border border-indigo-500/15 shadow-[inset_0_0_15px_rgba(99,102,241,0.05)] mt-2">
+                <div className="w-8 h-8 rounded-xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 text-indigo-400 shrink-0">
+                  <Mic size={15} />
+                </div>
+                <div className="text-xs text-slate-300 leading-relaxed font-semibold">
+                  The interview is <span className="text-indigo-300">completely hands-free</span>. Your mic activates automatically after each question. Just speak your answer — it submits on silence.
+                </div>
+              </div>
+
+              {/* Start button */}
+              <button 
+                onClick={startSession}
+                className="w-full mt-2 flex items-center justify-center gap-2.5 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-extrabold text-sm cursor-pointer tracking-wider shadow-[0_8px_30px_rgba(99,102,241,0.45)] border-t border-white/10 transition-all duration-300 active:scale-[0.99]"
               >
-                <option value="">— Generic Interview —</option>
-                {resumes.map(r => (
-                  <option key={r.id} value={r.id}>
-                    Resume #{r.id} — {r.target_role} ({new Date(r.created_at).toLocaleDateString()})
-                  </option>
-                ))}
-              </select>
+                <PlayCircle size={22} className="text-white fill-white/10" />
+                Start Interview
+              </button>
             </div>
-
-            {/* Info box */}
-            <div className="ih-info-box">
-              <Mic size={16} className="ih-info-icon" />
-              <span>The interview is <strong>completely hands-free</strong>. Your mic activates automatically after each question. Just speak your answer — it submits on silence.</span>
-            </div>
-
-            <button onClick={startSession} className="ih-start-btn">
-              <PlayCircle size={22} />
-              Start Interview
-            </button>
           </div>
+
+          {/* RIGHT: Tips & Guide Column (1 col) */}
+          <div className="space-y-6 lg:col-span-1">
+            
+            {/* Tips Card */}
+            <div className="glass-premium p-6 border border-white/5 shadow-xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-16 h-16 bg-purple-500/5 rounded-full blur-2xl" />
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 text-indigo-400 shrink-0">
+                  <Sparkles size={16} />
+                </div>
+                <h3 className="text-base font-extrabold text-white tracking-wide font-sans">Tips for Best Experience</h3>
+              </div>
+
+              {/* Tips Grid list */}
+              <div className="space-y-5.5">
+                {[
+                  {
+                    title: "Speak Clearly",
+                    desc: "Answer in complete sentences for better evaluation.",
+                    icon: Mic,
+                    color: "bg-indigo-500/10 border-indigo-500/30 text-indigo-400"
+                  },
+                  {
+                    title: "Stay Focused",
+                    desc: "Avoid background noise and interruptions.",
+                    icon: Target,
+                    color: "bg-purple-500/10 border-purple-500/30 text-purple-400"
+                  },
+                  {
+                    title: "Take Your Time",
+                    desc: "There's no rush. Think, speak, and respond.",
+                    icon: Clock,
+                    color: "bg-cyan-500/10 border-cyan-500/30 text-cyan-400"
+                  },
+                  {
+                    title: "Be Honest",
+                    desc: "AI gives better feedback when you're real.",
+                    icon: Heart,
+                    color: "bg-pink-500/10 border-pink-500/30 text-pink-400"
+                  }
+                ].map((tip, idx) => {
+                  const Icon = tip.icon;
+                  return (
+                    <div key={idx} className="flex gap-4">
+                      <div className={`w-9.5 h-9.5 rounded-xl border flex items-center justify-center shrink-0 shadow-md ${tip.color}`}>
+                        <Icon size={16} />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-white tracking-wide">{tip.title}</h4>
+                        <p className="text-xs text-slate-400 leading-relaxed font-semibold mt-0.5">{tip.desc}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Need Help Card */}
+            <div className="glass-premium p-6 border border-white/5 shadow-xl relative overflow-hidden flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-300 shrink-0">
+                  <Headphones size={18} />
+                </div>
+                <div>
+                  <h4 className="text-sm font-extrabold text-white tracking-wide">Need help?</h4>
+                  <p className="text-xs text-slate-400 leading-normal font-semibold mt-0.5">Check our guide or contact support.</p>
+                </div>
+              </div>
+              <button className="px-4 py-2 text-xs font-bold text-slate-300 border border-white/10 hover:border-white/20 rounded-xl bg-white/5 hover:bg-white/10 cursor-pointer transition-all duration-300">
+                View Guide
+              </button>
+            </div>
+            
+          </div>
+          
         </div>
       </div>
     );
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // RENDER — Results screen
+  // RENDER — Results screen (Sleek redesigned view)
   // ═══════════════════════════════════════════════════════════════════════════
   if (session.finished) {
     const avgScore = results.length
@@ -365,130 +512,179 @@ export default function Interview() {
         const response = await api.get(`/interview/${session.session_id}/report`);
         const reportData = response.data;
         
-        let report = `INTELLIHIRE AI - INTERVIEW ANALYSIS REPORT\n`;
-        report += `=============================================\n\n`;
-        report += `Generated on: ${new Date().toLocaleString()}\n`;
-        report += `Role: ${config.role}\n`;
-        report += `Type: ${config.type}\n`;
-        report += `Difficulty: ${config.difficulty}\n\n`;
+        const { jsPDF } = await import('jspdf');
+        await import('jspdf-autotable');
+        const doc = new jsPDF();
         
-        report += `PERFORMANCE SUMMARY:\n`;
-        report += `--------------------\n`;
-        report += `Average Score: ${avgScore}/100\n`;
-        report += `Questions Answered: ${results.length}\n`;
-        report += `Completion Rate: ${Math.round((results.length / session.questions.length) * 100)}%\n\n`;
+        doc.setFontSize(22);
+        doc.setTextColor(40, 40, 40);
+        doc.text('IntelliHire AI', 14, 20);
+        doc.setFontSize(14);
+        doc.setTextColor(100, 100, 100);
+        doc.text('Interview Analysis Report', 14, 28);
         
-        report += `QUESTION-BY-QUESTION ANALYSIS:\n`;
-        report += `-------------------------------\n`;
+        doc.setFontSize(10);
+        doc.text(`Role: ${config.role} | Type: ${config.type} | Difficulty: ${config.difficulty}`, 14, 36);
+        doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 42);
+        
+        doc.setLineWidth(0.5);
+        doc.line(14, 46, 196, 46);
+
+        // Performance Summary
+        doc.setFontSize(12);
+        doc.setTextColor(0, 0, 0);
+        doc.text('Performance Summary', 14, 56);
+        
+        doc.autoTable({
+          startY: 62,
+          head: [['Metric', 'Value']],
+          body: [
+            ['Average Score', `${avgScore}/100`],
+            ['Questions Answered', `${results.length}`],
+            ['Completion Rate', `${Math.round((results.length / session.questions.length) * 100)}%`]
+          ],
+          theme: 'grid',
+          headStyles: { fillColor: [79, 70, 229] }
+        });
+
+        // Question Analysis
+        let currentY = doc.lastAutoTable.finalY + 14;
+        doc.setFontSize(12);
+        doc.text('Detailed Feedback', 14, currentY);
+        
         results.forEach((r, i) => {
-          report += `Q${i + 1}: ${r.question.question}\n`;
-          report += `Your Score: ${r.evaluation.score}/100\n`;
-          report += `Feedback: ${r.evaluation.feedback}\n`;
-          if (r.evaluation.strengths?.length) {
-            report += `Strengths: ${r.evaluation.strengths.join(', ')}\n`;
-          }
-          if (r.evaluation.weaknesses?.length) {
-            report += `Areas for Improvement: ${r.evaluation.weaknesses.join(', ')}\n`;
-          }
-          report += `\n`;
+          doc.autoTable({
+            startY: currentY + 6,
+            head: [[`Q${i + 1}: ${r.question.question}`]],
+            body: [
+              [`Score: ${r.evaluation.score}/100`],
+              [`Your Answer: ${r.answer}`],
+              [`AI Feedback: ${r.evaluation.feedback}`]
+            ],
+            theme: 'grid',
+            headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0] }
+          });
+          currentY = doc.lastAutoTable.finalY + 10;
         });
         
-        if (reportData.strengths?.length) {
-          report += `OVERALL STRENGTHS:\n`;
-          report += `-------------------\n`;
-          reportData.strengths.forEach(strength => report += `• ${strength}\n`);
-          report += `\n`;
+        if (reportData.recommendations?.length > 0) {
+          doc.addPage();
+          doc.setFontSize(12);
+          doc.text('Recommendations', 14, 20);
+          const recBody = reportData.recommendations.map(r => [r]);
+          doc.autoTable({
+            startY: 28,
+            body: recBody,
+            theme: 'striped'
+          });
         }
-        
-        if (reportData.weaknesses?.length) {
-          report += `AREAS FOR IMPROVEMENT:\n`;
-          report += `-----------------------\n`;
-          reportData.weaknesses.forEach(weakness => report += `• ${weakness}\n`);
-          report += `\n`;
-        }
-        
-        report += `RECOMMENDATIONS:\n`;
-        report += `-----------------\n`;
-        reportData.recommendations.forEach(rec => report += `• ${rec}\n`);
-        
-        const blob = new Blob([report], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `IntelliHire_Interview_Report_${config.role.replace(/\s+/g, '_')}.txt`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+
+        doc.save(`IntelliHire_Interview_Report_${config.role.replace(/\s+/g, '_')}.pdf`);
       } catch (err) {
         console.error('Failed to download report:', err);
       }
     };
 
     return (
-      <div className="ih-page fade-in">
-        <div className="ih-results-hero">
-          <div className="ih-score-ring" style={{ '--ring-color': scoreColor(avgScore) }}>
-            <span className="ih-score-num">{avgScore}</span>
-            <span className="ih-score-label">/ 100</span>
+      <div className="py-6 max-w-4xl mx-auto w-full fade-in space-y-8">
+        
+        {/* Results Hero banner */}
+        <div className="glass-premium p-10 border border-indigo-500/10 shadow-2xl relative text-center flex flex-col items-center gap-6">
+          <div className="absolute top-0 right-0 w-36 h-36 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
+          
+          <div className="relative w-32 h-32 rounded-full border-4 flex flex-col items-center justify-center bg-[#03030a] shadow-[0_0_30px_rgba(99,102,241,0.2)]"
+               style={{ borderColor: scoreColor(avgScore) }}>
+            <span className="text-4xl font-extrabold text-white font-sans">{avgScore}</span>
+            <span className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">/ 100</span>
           </div>
-          <h1 className="ih-results-title">Interview Complete</h1>
-          <p className="ih-results-sub">{config.role} · {config.type} · {config.difficulty}</p>
-          <div className="ih-results-actions">
-            <button onClick={downloadInterviewReport} className="ih-start-btn" style={{ gap: '0.5rem', padding: '0.7rem 1.4rem', fontSize: '0.9rem' }}>
-              <Download size={18} /> Download Report
+
+          <div className="space-y-2">
+            <h1 className="text-3xl font-extrabold text-white font-sans">Interview Complete!</h1>
+            <p className="text-sm font-bold text-slate-400 tracking-wide">
+              {config.role} <span className="text-slate-600">•</span> {config.type} <span className="text-slate-600">•</span> {config.difficulty}
+            </p>
+          </div>
+
+          <div className="flex gap-4 flex-wrap justify-center mt-3">
+            <button 
+              onClick={downloadInterviewReport}
+              className="flex items-center justify-center gap-2.5 py-3 px-6 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white font-extrabold text-sm cursor-pointer shadow-lg border-t border-white/10 transition-colors"
+            >
+              <Download size={16} /> Download Report
             </button>
-            <button onClick={() => { setSession(null); setResults([]); setCurrentIndex(0); }} className="ih-ghost-btn">
+            <button 
+              onClick={() => { setSession(null); setResults([]); setCurrentIndex(0); }}
+              className="flex items-center justify-center gap-2.5 py-3 px-6 rounded-xl bg-white/5 border border-white/10 hover:border-white/20 text-slate-300 hover:text-white font-bold text-sm cursor-pointer transition-colors"
+            >
               New Interview
             </button>
           </div>
         </div>
 
-        <div className="ih-results-list">
-          <h2 className="ih-section-title"><BarChart2 size={20} /> Detailed Feedback</h2>
+        {/* Detailed Feedback Cards */}
+        <div className="space-y-6">
+          <div className="flex items-center gap-3">
+            <BarChart2 className="text-indigo-400" size={20} />
+            <h2 className="text-xl font-extrabold text-white font-sans">Detailed Feedback</h2>
+          </div>
+
           {results.map((r, i) => (
             <motion.div
               key={i}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.08 }}
-              className="ih-result-card"
+              className="glass p-6 border border-white/5 shadow-lg space-y-5"
             >
-              <div className="ih-result-q-row">
-                <span className="ih-q-num">Q{i + 1}</span>
-                <p className="ih-q-text">{r.question.question}</p>
-                <span className="ih-score-badge" style={{ '--badge-color': scoreColor(r.evaluation.score) }}>
+              {/* Question Row */}
+              <div className="flex items-start gap-4 pb-4 border-b border-white/5">
+                <span className="w-8 h-8 rounded-full bg-indigo-500/10 border border-indigo-500/35 flex items-center justify-center text-indigo-400 font-extrabold text-xs shrink-0 font-sans shadow-md">
+                  Q{i + 1}
+                </span>
+                <p className="text-sm font-bold text-white leading-relaxed flex-1 mt-0.5">{r.question.question}</p>
+                <span 
+                  className="px-3.5 py-1.5 rounded-full text-xs font-black text-white shrink-0 shadow-sm"
+                  style={{ backgroundColor: scoreColor(r.evaluation.score) }}
+                >
                   {r.evaluation.score}/100
                 </span>
               </div>
-              <div className="ih-result-body">
-                <div className="ih-answer-block">
-                  <p className="ih-block-label">Your Answer</p>
-                  <p className="ih-block-text">{r.answer}</p>
+
+              {/* QA Details */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {/* Your Answer */}
+                <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 relative">
+                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2 font-sans">Your Answer</span>
+                  <p className="text-sm text-slate-300 leading-relaxed font-semibold italic">"{r.answer}"</p>
                 </div>
-                <div className="ih-feedback-block">
-                  <p className="ih-block-label">AI Feedback</p>
-                  <p className="ih-block-text">{r.evaluation.feedback}</p>
+
+                {/* Feedback */}
+                <div className="p-4 rounded-xl bg-indigo-500/[0.02] border border-indigo-500/5">
+                  <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest block mb-2 font-sans">AI Feedback</span>
+                  <p className="text-sm text-slate-300 leading-relaxed font-semibold">{r.evaluation.feedback}</p>
+                  
                   {r.evaluation.strengths?.length > 0 && (
-                    <div style={{ marginTop: 12 }}>
-                      <p className="ih-block-label" style={{ fontSize: '0.8rem', color: '#10b981' }}>✓ Strengths</p>
-                      <ul style={{ fontSize: '0.85rem', color: '#94a3b8', marginTop: 4 }}>
-                        {r.evaluation.strengths.map((s, i) => <li key={i}>• {s}</li>)}
+                    <div className="mt-4">
+                      <span className="text-[10px] font-black text-teal-400 uppercase tracking-widest block font-sans">✓ Strengths</span>
+                      <ul className="text-xs text-slate-400 mt-1.5 space-y-1 font-semibold pl-1">
+                        {r.evaluation.strengths.map((s, idx) => <li key={idx}>• {s}</li>)}
                       </ul>
                     </div>
                   )}
+
                   {r.evaluation.weaknesses?.length > 0 && (
-                    <div style={{ marginTop: 12 }}>
-                      <p className="ih-block-label" style={{ fontSize: '0.8rem', color: '#f59e0b' }}>⚠️ Areas for Improvement</p>
-                      <ul style={{ fontSize: '0.85rem', color: '#94a3b8', marginTop: 4 }}>
-                        {r.evaluation.weaknesses.map((w, i) => <li key={i}>• {w}</li>)}
+                    <div className="mt-4">
+                      <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest block font-sans">⚠️ Areas for Improvement</span>
+                      <ul className="text-xs text-slate-400 mt-1.5 space-y-1 font-semibold pl-1">
+                        {r.evaluation.weaknesses.map((w, idx) => <li key={idx}>• {w}</li>)}
                       </ul>
                     </div>
                   )}
+
                   {r.evaluation.suggestedAnswer && (
-                    <div style={{ marginTop: 12 }}>
-                      <p className="ih-block-label" style={{ fontSize: '0.8rem', color: '#6366f1' }}>💡 Suggested Better Answer</p>
-                      <p style={{ fontSize: '0.85rem', color: '#cbd5e1', marginTop: 4, fontStyle: 'italic' }}>{r.evaluation.suggestedAnswer}</p>
+                    <div className="mt-4">
+                      <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest block font-sans">💡 Suggested Better Answer</span>
+                      <p className="text-xs text-indigo-200/90 leading-relaxed mt-1.5 font-semibold font-sans border-l-2 border-indigo-500/40 pl-2.5 py-0.5">{r.evaluation.suggestedAnswer}</p>
                     </div>
                   )}
                 </div>
@@ -501,101 +697,115 @@ export default function Interview() {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // RENDER — Interview screen
+  // RENDER — Active Interview screen
   // ═══════════════════════════════════════════════════════════════════════════
   const combinedTranscript = (finalTranscript + liveTranscript).trim();
   const progress = ((currentIndex) / session.questions.length) * 100;
 
   return (
-    <div className="ih-interview-wrap fade-in">
+    <div className="flex flex-col h-[calc(100vh-80px)] max-w-4xl mx-auto w-full py-4 gap-4 fade-in">
 
-      {/* ── Top bar ── */}
-      <div className="ih-topbar">
-        <div className="ih-topbar-left">
-          <span className="ih-role-tag">{config.type}</span>
-          <span className="ih-role-tag secondary">{config.role}</span>
-          <span className="ih-role-tag secondary">{config.difficulty}</span>
+      {/* Top Details panel */}
+      <div className="glass-premium p-4 border border-white/5 flex items-center justify-between shadow-lg">
+        <div className="flex gap-2.5">
+          <span className="px-3.5 py-1.5 rounded-xl text-xs font-black bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 shadow-md">
+            {config.type}
+          </span>
+          <span className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-white/5 border border-white/10 text-slate-300">
+            {config.role}
+          </span>
+          <span className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-white/5 border border-white/10 text-slate-300">
+            {config.difficulty}
+          </span>
         </div>
-        <div className="ih-progress-wrap">
-          <div className="ih-progress-bar">
+        
+        {/* Progress tracker */}
+        <div className="flex items-center gap-4">
+          <div className="w-28 h-2 bg-white/5 rounded-full overflow-hidden border border-white/[0.02]">
             <motion.div
-              className="ih-progress-fill"
+              className="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-full"
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
               transition={{ duration: 0.6, ease: 'easeOut' }}
             />
           </div>
-          <span className="ih-progress-label">
+          <span className="text-xs font-extrabold text-slate-400 font-sans tracking-wide">
             {currentIndex + 1} / {session.questions.length}
           </span>
         </div>
       </div>
 
-      {/* ── Chat area ── */}
-      <div className="ih-chat-area">
-
-        {/* Past Q&A */}
+      {/* Dialogue chat logs */}
+      <div className="flex-1 overflow-y-auto px-1 space-y-6 scrollbar-thin">
         <AnimatePresence>
           {results.map((r, idx) => (
-            <div key={idx} className="ih-qa-pair">
-              {/* AI bubble */}
+            <div key={idx} className="space-y-4">
+              {/* AI question bubble */}
               <motion.div
-                initial={{ opacity: 0, x: -20 }}
+                initial={{ opacity: 0, x: -15 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="ih-bubble-row ai"
+                className="flex items-end gap-3 max-w-[80%]"
               >
-                <div className="ih-avatar ai-avatar"><Bot size={18} /></div>
-                <div className="ih-bubble ai-bubble">
-                  <p className="ih-bubble-role">IntelliHire AI</p>
-                  <p>{r.question.question}</p>
+                <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white shrink-0 shadow-lg">
+                  <Bot size={16} />
+                </div>
+                <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 text-sm font-semibold text-slate-200 leading-relaxed shadow-sm relative rounded-bl-sm">
+                  <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mb-1">IntelliHire AI</span>
+                  {r.question.question}
                 </div>
               </motion.div>
 
-              {/* User bubble */}
+              {/* User answer bubble */}
               <motion.div
-                initial={{ opacity: 0, x: 20 }}
+                initial={{ opacity: 0, x: 15 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="ih-bubble-row user"
+                className="flex items-end gap-3 max-w-[80%] ml-auto flex-row-reverse"
               >
-                <div className="ih-bubble user-bubble">
-                  <p className="ih-bubble-role user-role">You</p>
-                  <p>{r.answer}</p>
+                <div className="w-8 h-8 rounded-full bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400 font-extrabold shrink-0 shadow-md">
+                  T
                 </div>
-                <div className="ih-avatar user-avatar"><User size={18} /></div>
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-indigo-600 to-indigo-700 border border-indigo-500/20 text-sm font-semibold text-white leading-relaxed shadow-md relative rounded-br-sm text-right">
+                  <span className="text-[9px] font-black text-white/50 uppercase tracking-widest block mb-1 text-right">You</span>
+                  {r.answer}
+                </div>
               </motion.div>
 
-              {/* Inline score chip */}
-              <div className="ih-score-chip" style={{ '--chip-color': scoreColor(r.evaluation.score) }}>
-                <CheckCircle size={13} />
-                Score: {r.evaluation.score}/100 — {r.evaluation.feedback?.split('.')[0]}
+              {/* Score tag */}
+              <div className="flex justify-start pl-11">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-white/5 border border-white/10 text-slate-300 shadow-md"
+                     style={{ borderLeft: `3px solid ${scoreColor(r.evaluation.score)}` }}>
+                  <CheckCircle size={13} className="text-teal-400" />
+                  Score: <span className="text-white font-extrabold">{r.evaluation.score}/100</span> — {r.evaluation.feedback?.split('.')[0]}
+                </div>
               </div>
             </div>
           ))}
         </AnimatePresence>
 
-        {/* Current AI question */}
+        {/* Current Active AI question */}
         {!isEvaluating && (
           <motion.div
             key={`q-${currentIndex}`}
-            initial={{ opacity: 0, x: -20 }}
+            initial={{ opacity: 0, x: -15 }}
             animate={{ opacity: 1, x: 0 }}
-            className="ih-bubble-row ai"
+            className="flex items-end gap-3 max-w-[80%]"
           >
-            <div className={`ih-avatar ai-avatar ${isAiSpeaking ? 'speaking' : ''}`}>
-              <Bot size={18} />
-              {isAiSpeaking && <span className="speaking-ring" />}
+            <div className={`w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white shrink-0 shadow-lg relative ${isAiSpeaking ? 'animate-[pulse_1s_infinite]' : ''}`}>
+              <Bot size={16} />
+              {isAiSpeaking && <span className="speaking-ring absolute inset-0 rounded-full border border-indigo-400" />}
             </div>
-            <div className="ih-bubble ai-bubble current-q">
-              <p className="ih-bubble-role">IntelliHire AI</p>
-              <p>{session.questions[currentIndex]?.question}</p>
+            <div className="p-4 rounded-2xl bg-[#080714] border border-indigo-500/25 text-sm font-semibold text-slate-100 leading-relaxed shadow-[0_0_15px_rgba(99,102,241,0.06)] relative rounded-bl-sm">
+              <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest block mb-1">IntelliHire AI</span>
+              {session.questions[currentIndex]?.question}
+              
               {isAiSpeaking && (
-                <div className="ih-voice-bars ai-bars">
+                <div className="flex items-end gap-0.5 mt-3 h-4">
                   {[...Array(5)].map((_, i) => (
                     <motion.span
                       key={i}
-                      className="ih-bar ai-bar"
-                      animate={{ height: ['4px', `${12 + i * 3}px`, '4px'] }}
-                      transition={{ repeat: Infinity, duration: 0.4 + i * 0.1, ease: 'easeInOut' }}
+                      className="w-0.5 bg-indigo-400 rounded-full"
+                      animate={{ height: ['4px', `${12 + i * 2}px`, '4px'] }}
+                      transition={{ repeat: Infinity, duration: 0.4 + i * 0.08, ease: 'easeInOut' }}
                     />
                   ))}
                 </div>
@@ -604,19 +814,19 @@ export default function Interview() {
           </motion.div>
         )}
 
-        {/* Evaluating state */}
+        {/* Evaluating State Loader */}
         {isEvaluating && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="ih-evaluating"
+            className="flex items-center gap-3 pl-11 text-slate-400 text-sm font-semibold tracking-wide"
           >
-            <div className="ih-eval-dots">
+            <div className="flex gap-1.5 items-center">
               {[0, 1, 2].map(i => (
                 <motion.span
                   key={i}
-                  className="ih-eval-dot"
-                  animate={{ y: [0, -8, 0] }}
+                  className="w-1.5 h-1.5 rounded-full bg-indigo-400"
+                  animate={{ y: [0, -6, 0] }}
                   transition={{ repeat: Infinity, duration: 0.6, delay: i * 0.15 }}
                 />
               ))}
@@ -628,27 +838,34 @@ export default function Interview() {
         <div ref={scrollRef} />
       </div>
 
-      {/* ── Hands-free voice panel ── */}
-      <div className="ih-voice-panel">
-        {/* Live transcript */}
+      {/* Voice controls & Transcript panel */}
+      <div className="glass-premium p-5 border border-white/5 flex flex-col items-center gap-4 shadow-xl">
+        
+        {/* Live Transcript Display */}
         <AnimatePresence>
-          {combinedTranscript && !isEvaluating && (
+          {!isAiSpeaking && !isEvaluating ? (
             <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 8 }}
-              className="ih-live-transcript"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="w-full"
             >
-              <User size={13} className="ih-live-icon" />
-              <span>{combinedTranscript}</span>
+              <div className="w-full bg-[#0a0f1c]/50 border border-teal-500/30 rounded-xl px-5 py-4 text-teal-100 text-sm min-h-[100px] flex items-center justify-center text-center shadow-[inset_0_0_20px_rgba(20,184,166,0.05)] italic font-semibold">
+                {combinedTranscript || "Listening... Speak your answer now."}
+              </div>
             </motion.div>
-          )}
+          ) : null}
         </AnimatePresence>
 
-        {/* Central mic orb */}
-        <div className="ih-mic-center">
-          <div className={`ih-mic-orb ${isListening ? 'active' : ''} ${isEvaluating ? 'processing' : ''} ${isAiSpeaking ? 'ai-speaking' : ''}`}>
-            {/* Ripple rings */}
+        {/* Mic control Orb and Waveforms */}
+        <div className="flex flex-col items-center gap-3">
+          <div 
+            onClick={() => {
+              if (isListening) stopListening();
+              else startListening();
+            }}
+            className={`relative w-16 h-16 rounded-full flex items-center justify-center transition-all duration-500 cursor-pointer hover:scale-105 ${isListening ? 'bg-teal-500/10 border-2 border-teal-400 shadow-[0_0_25px_rgba(20,184,166,0.3)]' : 'bg-slate-800/80 border border-slate-700 text-slate-400 hover:text-teal-400 hover:border-teal-500/50'}`}
+          >
             {isListening && (
               <>
                 <span className="ih-ripple r1" />
@@ -656,22 +873,22 @@ export default function Interview() {
                 <span className="ih-ripple r3" />
               </>
             )}
-            <Mic size={28} className="ih-mic-icon" />
+            <Mic size={24} className={isListening ? 'text-teal-400' : ''} />
           </div>
 
-          {/* Waveform */}
-          <div className="ih-waveform">
+          {/* Dynamic Audio waveforms */}
+          <div className="flex items-center gap-0.5 h-8 mt-1.5">
             {barHeights.map((h, i) => (
               <span
                 key={i}
-                className="ih-wv-bar"
-                style={{ height: `${h}px`, opacity: isListening ? 0.7 + Math.random() * 0.3 : 0.2 }}
+                className="w-0.5 bg-teal-500/80 rounded-full transition-all duration-75"
+                style={{ height: `${h}px`, opacity: isListening ? 0.75 + Math.random() * 0.25 : 0.2 }}
               />
             ))}
           </div>
 
-          {/* Status label */}
-          <p className="ih-mic-status">
+          {/* Micro status label */}
+          <p className="text-xs font-bold text-slate-400 tracking-wide mt-1">
             {isAiSpeaking && '🔊 AI is speaking…'}
             {isListening && !isAiSpeaking && '🎙️ Listening — speak your answer'}
             {isEvaluating && '⚙️ Evaluating…'}
