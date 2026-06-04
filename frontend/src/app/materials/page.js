@@ -4,23 +4,23 @@ import { Bookmark, FileText, Download, ExternalLink, PlayCircle } from 'lucide-r
 
 export default function Materials() {
   const materials = [
-    { id: 1, type: 'guide', title: 'React Official Documentation', desc: 'The best place to deeply understand React hooks, rendering, and state management.', icon: FileText, color: 'text-teal-400', bg: 'bg-teal-500/10', link: 'https://react.dev/learn' },
-    { id: 2, type: 'video', title: 'System Design Primer', desc: 'The most comprehensive guide to cracking the system design interview.', icon: PlayCircle, color: 'text-indigo-400', bg: 'bg-indigo-500/10', link: 'https://github.com/donnemartin/system-design-primer' },
-    { id: 3, type: 'guide', title: 'FreeCodeCamp Interview Prep', desc: 'Thousands of coding challenges and interview questions across all tech stacks.', icon: Bookmark, color: 'text-blue-400', bg: 'bg-blue-500/10', link: 'https://www.freecodecamp.org/learn/coding-interview-prep/' },
-    { id: 4, type: 'template', title: 'FAANG-level Resume Template', desc: 'Download standard ATS-optimized resume templates (Harvard format).', icon: Download, color: 'text-emerald-400', bg: 'bg-emerald-500/10', link: 'https://hwpi.harvard.edu/files/ocs/files/hes-resume-cover-letter-guide.pdf' },
-    { id: 5, type: 'guide', title: 'MDN Web Docs (JavaScript)', desc: 'The gold standard for JavaScript concepts, closures, and prototypes.', icon: FileText, color: 'text-amber-400', bg: 'bg-amber-500/10', link: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript' },
-    { id: 6, type: 'video', title: 'ByteByteGo System Design', desc: 'Visual step-by-step videos of complex system architectures.', icon: PlayCircle, color: 'text-pink-400', bg: 'bg-pink-500/10', link: 'https://www.youtube.com/@ByteByteGo' },
+    { id: 1, type: 'guide', title: 'React Official Documentation', desc: 'The best place to deeply understand React hooks, rendering, and state management.', icon: FileText, color: 'text-teal-600', bg: 'bg-teal-50 border-teal-100', link: 'https://react.dev/learn' },
+    { id: 2, type: 'video', title: 'System Design Primer', desc: 'The most comprehensive guide to cracking the system design interview.', icon: PlayCircle, color: 'text-indigo-600', bg: 'bg-indigo-50 border-indigo-100', link: 'https://github.com/donnemartin/system-design-primer' },
+    { id: 3, type: 'guide', title: 'FreeCodeCamp Interview Prep', desc: 'Thousands of coding challenges and interview questions across all tech stacks.', icon: Bookmark, color: 'text-blue-600', bg: 'bg-blue-50 border-blue-100', link: 'https://www.freecodecamp.org/learn/coding-interview-prep/' },
+    { id: 4, type: 'template', title: 'FAANG-level Resume Template', desc: 'Download standard ATS-optimized resume templates (Harvard format).', icon: Download, color: 'text-emerald-600', bg: 'bg-emerald-50 border-emerald-100', link: 'https://hwpi.harvard.edu/files/ocs/files/hes-resume-cover-letter-guide.pdf' },
+    { id: 5, type: 'guide', title: 'MDN Web Docs (JavaScript)', desc: 'The gold standard for JavaScript concepts, closures, and prototypes.', icon: FileText, color: 'text-amber-600', bg: 'bg-amber-50 border-amber-100', link: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript' },
+    { id: 6, type: 'video', title: 'ByteByteGo System Design', desc: 'Visual step-by-step videos of complex system architectures.', icon: PlayCircle, color: 'text-pink-600', bg: 'bg-pink-50 border-pink-100', link: 'https://www.youtube.com/@ByteByteGo' },
   ];
 
   return (
-    <div className="py-6 space-y-6">
+    <div className="py-6 space-y-6 max-w-7xl mx-auto">
       <div className="flex items-center gap-3 mb-8">
-        <div className="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center border border-amber-500/30">
-          <Bookmark className="text-amber-400" size={24} />
+        <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center border border-amber-200 shadow-sm">
+          <Bookmark className="text-amber-500" size={24} />
         </div>
         <div>
-          <h1 className="text-3xl font-bold text-white">Saved Materials</h1>
-          <p className="text-slate-400 text-sm">Curated resources and templates to help you prepare.</p>
+          <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">Saved Materials</h1>
+          <p className="text-slate-500 text-sm font-medium mt-1">Curated resources and templates to help you prepare.</p>
         </div>
       </div>
 
@@ -31,15 +31,15 @@ export default function Materials() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
             key={mat.id} 
-            className="glass rounded-2xl p-6 border border-white/5 flex flex-col h-full group hover:border-white/20 transition-colors"
+            className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col h-full group hover:shadow-md hover:border-slate-300 transition-all"
           >
-            <div className={`w-12 h-12 rounded-xl ${mat.bg} flex items-center justify-center mb-4`}>
+            <div className={`w-12 h-12 rounded-xl ${mat.bg} border flex items-center justify-center mb-4`}>
               <mat.icon className={mat.color} size={24} />
             </div>
-            <h3 className="text-lg font-bold text-white mb-2">{mat.title}</h3>
-            <p className="text-slate-400 text-sm flex-1 leading-relaxed">{mat.desc}</p>
+            <h3 className="text-lg font-bold text-slate-800 mb-2 group-hover:text-indigo-600 transition-colors">{mat.title}</h3>
+            <p className="text-slate-500 font-medium text-sm flex-1 leading-relaxed">{mat.desc}</p>
             
-            <a href={mat.link} target="_blank" rel="noopener noreferrer" className="mt-6 w-full py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white text-sm font-medium flex items-center justify-center gap-2 transition-colors">
+            <a href={mat.link} target="_blank" rel="noopener noreferrer" className="mt-6 w-full py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-sm font-bold flex items-center justify-center gap-2 transition-colors">
               Access Resource <ExternalLink size={14} />
             </a>
           </motion.div>

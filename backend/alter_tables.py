@@ -41,6 +41,18 @@ def alter_tables():
         except Exception as e:
             print("overall_score error:", e)
             
+        try:
+            conn.execute(text('ALTER TABLE users ADD COLUMN reset_otp VARCHAR;'))
+            print("Added reset_otp to users")
+        except Exception as e:
+            print("reset_otp error:", e)
+
+        try:
+            conn.execute(text('ALTER TABLE users ADD COLUMN reset_otp_expires TIMESTAMP WITH TIME ZONE;'))
+            print("Added reset_otp_expires to users")
+        except Exception as e:
+            print("reset_otp_expires error:", e)
+            
         conn.commit()
 
 alter_tables()

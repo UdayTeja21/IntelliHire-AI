@@ -124,8 +124,7 @@ def get_fallback_resume_analysis(resume_text: str, target_role: str) -> dict:
 
     # --- 2. Advanced Project Extraction ---
     lines = resume_text.split('\n')
-    project_blocks = []
-    current_block = []
+    projects_text = []
     in_projects_section = False
 
     for line in lines:
@@ -133,31 +132,33 @@ def get_fallback_resume_analysis(resume_text: str, target_role: str) -> dict:
         if not cleaned_line:
             continue
             
-        # Detect section headers
-        header_match = re.match(r'^[\W_]*([A-Za-z]+)[\W_]*$', cleaned_line)
+        # Detect section headers (allow spaces for 'Personal Projects' etc)
+        header_match = re.match(r'^[\W_]*([A-Za-z\s]+)[\W_]*$', cleaned_line)
         if header_match:
-            header_text = header_match.group(1).lower()
+            header_text = header_match.group(1).lower().strip()
             if "project" in header_text:
                 in_projects_section = True
                 continue
-            elif header_text in ["experience", "education", "skills", "summary"]:
+            elif any(s in header_text for s in ["experience", "education", "skills", "summary"]):
                 in_projects_section = False
                 
         if in_projects_section:
-            # Bullet point or strong line starts a new project
-            if re.match(r'^[-•*]', cleaned_line) or len(cleaned_line.split()) < 8:
-                if current_block:
-                    project_blocks.append(" ".join(current_block))
-                current_block = [cleaned_line]
-            else:
-                current_block.append(cleaned_line)
+            projects_text.append(cleaned_line)
                 
-        # Heuristic fallback if no explicit "Projects" section but lines look like projects
-        elif any(verb in cleaned_line.lower() for verb in ["developed a", "built a", "created a", "architected", "designed a"]):
-            project_blocks.append(cleaned_line)
-
-    if current_block:
-        project_blocks.append(" ".join(current_block))
+    project_blocks = []
+    full_projects_string = " ".join(projects_text)
+    
+    if len(full_projects_string.split()) > 20:
+        # Treat the entire section as one massive project portfolio to prevent fragmentation
+        project_blocks.append(full_projects_string)
+    else:
+        # Heuristic fallback if no explicit "Projects" section
+        heuristic_blocks = []
+        for line in lines:
+            if any(verb in line.lower() for verb in ["developed a", "built a", "created a"]):
+                heuristic_blocks.append(line.strip())
+        if heuristic_blocks:
+            project_blocks.append(" ".join(heuristic_blocks))
 
     # Parse extracted project blocks
     dynamic_projects = []
@@ -166,12 +167,9 @@ def get_fallback_resume_analysis(resume_text: str, target_role: str) -> dict:
     for idx, block in enumerate(project_blocks[:5]):  # limit to top 5
         block_lower = block.lower()
         
-        # Extract title: Try to get first few words or words before colon
-        # First clean bullet points
-        cleaned_block = re.sub(r'^[-•*]\s*', '', block).strip()
-        title_match = re.split(r'[:|—-]', cleaned_block)[0].strip()
-        title = title_match[:40] if len(title_match.split()) <= 6 else f"Project {idx+1}"
-
+        # Use a safe, professional name instead of extracting random sentences
+        title = f"Key Projects Portfolio" if idx == 0 else f"Additional Projects"
+        
         # Extract specific tech for this project
         proj_tech = [s.capitalize() for s in all_known_skills if re.search(r'\b' + re.escape(s) + r'\b', block_lower)]
         if not proj_tech:
@@ -285,6 +283,22 @@ def get_fallback_resume_analysis(resume_text: str, target_role: str) -> dict:
             "missingRequirements": missing_critical
         },
         "sectionAnalysis": {
+            "summary": {
+                "score": int(ats), "detected": ["Professional Summary"], "strengths": ["Clear communication"], "weaknesses": ["Could use more metrics"],
+                "suggestions": ["Quantify your achievements in the summary."], "optimizedVersion": "Dynamic text optimized.", "impactfulLines": [], "weakLines": []
+            },
+            "experience": {
+                "score": int(tech), "detected": ["Work Experience"], "strengths": ["Relevant background"], "weaknesses": ["Needs more depth"] if text_length < 200 else [],
+                "suggestions": ["Add bullet points for each role."], "optimizedVersion": "Dynamic text optimized.", "impactfulLines": [], "weakLines": []
+            },
+            "education": {
+                "score": 85, "detected": ["Education details"], "strengths": ["Academic background"], "weaknesses": [],
+                "suggestions": ["Include relevant coursework if applicable."], "optimizedVersion": "Dynamic text optimized.", "impactfulLines": [], "weakLines": []
+            },
+            "skills": {
+                "score": int(tech), "detected": found_skills, "strengths": ["Core technologies"], "weaknesses": missing_critical,
+                "suggestions": [f"Add {missing_critical[0]} to your resume"] if missing_critical else ["Keep skills updated"], "optimizedVersion": "Dynamic text optimized.", "impactfulLines": [], "weakLines": []
+            },
             "projects": {
                 "score": int(proj), "detected": [p["name"] for p in dynamic_projects], "strengths": ["Real-world application"], "weaknesses": ["Needs more metrics"] if needs_metrics else [],
                 "suggestions": ["Add more technical depth"], "optimizedVersion": "Dynamic text optimized.", "impactfulLines": [], "weakLines": []

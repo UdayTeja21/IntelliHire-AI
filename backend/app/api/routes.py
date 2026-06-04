@@ -66,6 +66,7 @@ def extract_text_from_pdf(file_bytes: bytes, max_chars: int = 15000) -> str:
 @router.post("/resume/analyze")
 async def analyze_resume_text(
     target_role: str = Form(...),
+    experience_level: str = Form("Fresher (0-1 years)"),
     file: UploadFile = File(None),
     resume_text: str = Form(None),
     db: Session = Depends(get_db),
@@ -99,7 +100,7 @@ async def analyze_resume_text(
     
     start_time = datetime.datetime.now()
     # Run the synchronous, blocking AI service in a threadpool to prevent the FastAPI event loop from freezing
-    result = await run_in_threadpool(ai_service.analyze_resume, text, target_role)
+    result = await run_in_threadpool(ai_service.analyze_resume, text, target_role, experience_level)
     elapsed = (datetime.datetime.now() - start_time).total_seconds()
     
     logger.info(f"Resume analysis completed in {elapsed:.2f} seconds.")
@@ -156,31 +157,58 @@ def get_resume_history(
 
 # --- Interview Routes ---
 
-class InterviewStartRequest(BaseModel):
-    role: str
-    type: str
-    difficulty: str
-    resume_id: Optional[int] = None
-
 @router.post("/interview/start")
-def start_interview(
-    request: InterviewStartRequest,
+async def start_interview(
+    role: str = Form(...),
+    type: str = Form(...),
+    difficulty: str = Form(...),
+    experience: str = Form("Junior (1-3 yrs)"),
+    domain: str = Form("General / Tech"),
+    file: UploadFile = File(None),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
+    combined_role = f"{role} | Experience: {experience} | Domain: {domain}"
     resume_context = None
-    if request.resume_id:
-        resume = db.query(models.Resume).filter(models.Resume.id == request.resume_id, models.Resume.user_id == current_user.id).first()
-        if resume:
-            resume_context = resume.content_text
+    if file:
+        contents = await file.read()
+        if file.filename.endswith(".pdf"):
+            resume_context = extract_text_from_pdf(contents)
+        else:
+            resume_context = contents.decode("utf-8", errors="ignore")
+    else:
+        # Fetch the most recent resume for the user if no new file is uploaded
+        latest_resume = db.query(models.Resume).filter(
+            models.Resume.user_id == current_user.id
+        ).order_by(models.Resume.created_at.desc()).first()
+        if latest_resume:
+            resume_context = latest_resume.content_text
 
-    questions = ai_service.generate_questions(request.role, request.type, request.difficulty, resume_context=resume_context)
+    # Fetch past questions for this user/role/type to avoid repetition
+    past_sessions = db.query(models.InterviewSession.id).filter(
+        models.InterviewSession.user_id == current_user.id,
+        models.InterviewSession.role == combined_role,
+        models.InterviewSession.type == type
+    ).order_by(models.InterviewSession.created_at.desc()).limit(50).all()
+    
+    avoid_questions = []
+    if past_sessions:
+        session_ids = [s[0] for s in past_sessions]
+        past_qs = db.query(models.InterviewQuestion.question_text).filter(
+            models.InterviewQuestion.session_id.in_(session_ids)
+        ).order_by(models.InterviewQuestion.id.desc()).limit(500).all()
+        avoid_questions = [q[0] for q in past_qs]
+
+    # Generate only the first question
+    questions = ai_service.generate_questions(combined_role, type, difficulty, count=1, resume_context=resume_context, avoid_questions=avoid_questions)
+    questions = questions[:1] # Force exactly 1 question to prevent count logic drift
 
     session = models.InterviewSession(
         user_id=current_user.id,
-        role=request.role,
-        type=request.type,
-        difficulty=request.difficulty
+        role=combined_role,
+        type=type,
+        difficulty=difficulty,
+        resume_text=resume_context
     )
     db.add(session)
     db.commit()
@@ -223,7 +251,9 @@ def evaluate_answer(
 ):
     evaluation = ai_service.evaluate_answer(request.question, request.answer, request.role)
     
+    next_question = None
     if request.session_id:
+        # Save candidate's answer and score
         db_q = db.query(models.InterviewQuestion).filter(
             models.InterviewQuestion.session_id == request.session_id,
             models.InterviewQuestion.question_text == request.question
@@ -234,28 +264,162 @@ def evaluate_answer(
             db_q.feedback_json = json.dumps(evaluation)
             db.commit()
             
+            # Update overall session score
             avg_score = db.query(func.avg(models.InterviewQuestion.score)).filter(
                 models.InterviewQuestion.session_id == request.session_id,
                 models.InterviewQuestion.score.isnot(None)
             ).scalar()
-            if avg_score is not None:
-                db_session = db.query(models.InterviewSession).filter(
-                    models.InterviewSession.id == request.session_id
-                ).first()
-                if db_session:
+            
+            db_session = db.query(models.InterviewSession).filter(
+                models.InterviewSession.id == request.session_id
+            ).first()
+            
+            if db_session:
+                if avg_score is not None:
                     db_session.overall_score = avg_score
                     db.commit()
+                
+                # Fetch all questions in this session for history
+                all_qs = db.query(models.InterviewQuestion).filter(
+                    models.InterviewQuestion.session_id == request.session_id
+                ).order_by(models.InterviewQuestion.id).all()
+                
+                history = [
+                    {"question": q.question_text, "answer": q.candidate_answer}
+                    for q in all_qs if q.candidate_answer is not None
+                ]
+                
+                # We limit the interview to 10 questions total.
+                # If we have less than 10 questions in history, generate a new one.
+                if len(history) < 10:
+                    try:
+                        next_q_data = ai_service.generate_next_question(
+                            role=db_session.role,
+                            type=db_session.type,
+                            difficulty=db_session.difficulty,
+                            history=history,
+                            resume_context=db_session.resume_text
+                        )
+                        next_question = next_q_data
+                        
+                        # Save the new question to DB immediately
+                        new_db_q = models.InterviewQuestion(
+                            session_id=db_session.id,
+                            question_text=next_q_data.get("question"),
+                            category=next_q_data.get("category")
+                        )
+                        db.add(new_db_q)
+                        db.commit()
+                    except Exception as e:
+                        logger.error(f"Failed to generate next question: {str(e)}")
+                else:
+                    # Interview completed (10 questions reached)
+                    import threading
+                    from app.services.pdf_service import generate_interview_pdf
+                    from app.services.email_service import send_completion_email
+                    
+                    prefs = {}
+                    if current_user.preferences_json:
+                        try:
+                            prefs = json.loads(current_user.preferences_json)
+                        except:
+                            pass
+                            
+                    if prefs.get("emailAlerts", True):
+                        try:
+                            pdf_bytes = generate_interview_pdf(db_session, all_qs)
+                            threading.Thread(
+                                target=send_completion_email,
+                                args=(current_user.email, current_user.full_name or "Candidate", pdf_bytes)
+                            ).start()
+                        except Exception as e:
+                            logger.error(f"Failed to send completion email: {str(e)}")
 
-    return evaluation
+    return {"evaluation": evaluation, "next_question": next_question}
 
 
 @router.get("/user/me")
 def get_me(current_user: models.User = Depends(get_current_user)):
+    prefs = {}
+    if current_user.preferences_json:
+        try:
+            prefs = json.loads(current_user.preferences_json)
+        except:
+            pass
     return {
         "id": current_user.id,
         "email": current_user.email,
-        "full_name": current_user.full_name
+        "full_name": current_user.full_name,
+        "target_role": current_user.target_role,
+        "preferences": prefs
     }
+
+class UserProfileUpdate(BaseModel):
+    full_name: Optional[str] = None
+    target_role: Optional[str] = None
+    preferences: Optional[dict] = None
+
+@router.put("/user/profile")
+def update_user_profile(
+    request: UserProfileUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    if request.full_name is not None:
+        current_user.full_name = request.full_name
+    if request.target_role is not None:
+        current_user.target_role = request.target_role
+    if request.preferences is not None:
+        current_user.preferences_json = json.dumps(request.preferences)
+    
+    db.commit()
+    return {"message": "Profile updated successfully"}
+
+class UserPasswordUpdate(BaseModel):
+    new_password: str
+
+@router.put("/user/password")
+def update_password(
+    request: UserPasswordUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    from app.core.security import get_password_hash
+    
+    current_user.hashed_password = get_password_hash(request.new_password)
+    db.commit()
+    
+    # Trigger Password Change Security Email asynchronously
+    import threading
+    from app.services.email_service import send_password_change_email
+    threading.Thread(
+        target=send_password_change_email,
+        args=(current_user.email, current_user.full_name or "User")
+    ).start()
+    
+    return {"message": "Password updated successfully"}
+
+@router.get("/interview/history")
+def get_interview_history(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    sessions = db.query(models.InterviewSession).filter(
+        models.InterviewSession.user_id == current_user.id
+    ).order_by(models.InterviewSession.created_at.desc()).all()
+    
+    response_data = []
+    for s in sessions:
+        score_val = int(s.overall_score) if s.overall_score else 0
+        response_data.append({
+            "id": s.id,
+            "role": s.role,
+            "type": s.type,
+            "difficulty": s.difficulty,
+            "score": score_val,
+            "created_at": s.created_at.isoformat() if s.created_at else None
+        })
+    return response_data
 
 @router.get("/interview/{session_id}/report")
 def generate_interview_report(
@@ -422,13 +586,22 @@ def get_user_stats(db: Session = Depends(get_db), current_user: models.User = De
     avg_hiring = avg_hiring if avg_hiring else 0
 
     # For new metrics, we compute avg from JSON (a bit slow but works for this scale)
-    all_resumes = db.query(models.Resume).filter(models.Resume.user_id == current_user.id).all()
+    all_resumes = db.query(models.Resume).filter(models.Resume.user_id == current_user.id).order_by(models.Resume.created_at.desc()).all()
     avg_comm, avg_skill = 0, 0
+    extracted_skills = []
+    missing_skills = []
+    
     if all_resumes:
         comm_sum, skill_sum, count = 0, 0, 0
+        
+        # Get skills from the most recent resume that has analysis_json
         for r in all_resumes:
             if r.analysis_json:
                 data = json.loads(r.analysis_json)
+                if "skillAnalysis" in data and not extracted_skills:
+                    extracted_skills = data["skillAnalysis"].get("technicalSkills", [])
+                    missing_skills = data["skillAnalysis"].get("missingCriticalSkills", [])
+                
                 comm_sum += data.get("communication", 0)
                 skill_sum += data.get("skillRelevance", 0)
                 count += 1
@@ -523,6 +696,8 @@ def get_user_stats(db: Session = Depends(get_db), current_user: models.User = De
         "technicalTrend": technical_trend,
         "projectTrend": project_trend,
         "hiringTrend": hiring_trend,
-        "recentInterviews": recent_interviews
+        "recentInterviews": recent_interviews,
+        "extractedSkills": extracted_skills,
+        "missingSkills": missing_skills
     }
 

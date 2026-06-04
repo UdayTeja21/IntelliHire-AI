@@ -8,11 +8,21 @@ from app.db.database import engine, Base
 # Create database tables
 Base.metadata.create_all(bind=engine)
 
+from contextlib import asynccontextmanager
+from app.core.scheduler import start_scheduler
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    start_scheduler()
+    yield
+    # scheduler will close on process exit
+
 # Initialize FastAPI app
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version="1.0.0",
-    description="IntelliHire AI Backend API"
+    description="IntelliHire AI Backend API",
+    lifespan=lifespan
 )
 
 # Allowed frontend origins

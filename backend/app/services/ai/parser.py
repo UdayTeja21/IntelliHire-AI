@@ -18,19 +18,21 @@ def extract_json_from_text(text: str) -> dict | list | None:
     if match:
         clean_text = match.group(1)
         
-    # 3. Handle trailing commas (common LLM mistake)
-    clean_text = re.sub(r',\s*([\]}])', r'\1', clean_text)
+    # 3. Trailing commas are handled by the ast.literal_eval fallback safely.
     
     try:
         return json.loads(clean_text)
     except Exception as e:
         print(f"[Parser] Standard parse failed. Trying aggressive cleanup. Error: {e}")
-        # 4. Aggressive cleanup for unescaped newlines within strings
+        # 4. Aggressive cleanup for python dict syntax and unescaped newlines
         try:
-            # A very simplistic attempt to escape unescaped newlines in values
             import ast
-            # Fallback to ast literal_eval if it happens to be valid python dict format (LLMs do this)
-            return ast.literal_eval(clean_text)
+            # Convert JSON boolean/null to Python equivalents for literal_eval
+            # Only replace exact words, though a simple string replace is risky, it's a last resort
+            py_text = re.sub(r'\btrue\b', 'True', clean_text)
+            py_text = re.sub(r'\bfalse\b', 'False', py_text)
+            py_text = re.sub(r'\bnull\b', 'None', py_text)
+            return ast.literal_eval(py_text)
         except Exception as e2:
             print(f"[Parser] Aggressive parse failed. Error: {e2}")
             return None

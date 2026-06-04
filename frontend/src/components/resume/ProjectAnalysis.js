@@ -7,7 +7,7 @@ function ScorePill({ label, value, color }) {
   return (
     <div style={{ textAlign: 'center', padding: '12px 8px', background: 'rgba(255,255,255,0.03)', borderRadius: 10, border: '1px solid rgba(255,255,255,0.06)' }}>
       <div style={{ fontSize: 20, fontWeight: 900, color: color || '#818cf8', marginBottom: 4 }}>{value}</div>
-      <div style={{ fontSize: 10, color: '#475569', fontWeight: 600 }}>{label}</div>
+      <div style={{ fontSize: 10, color: '#cbd5e1', fontWeight: 600 }}>{label}</div>
     </div>
   );
 }

@@ -26,7 +26,7 @@ def generate_gemini(prompt: str, max_retries: int = 2) -> str:
             response = model.generate_content(
                 prompt, 
                 generation_config={"response_mime_type": "application/json"},
-                request_options={"timeout": 15}
+                request_options={"timeout": 60}
             )
             return response.text
         except Exception as e:

@@ -63,47 +63,47 @@ function useCountUp(target, duration = 1000) {
 
 export { useCountUp };
 
-// Upgraded floating CSS graphic
+// Upgraded floating CSS graphic for light theme
 const ATSGraphic = () => (
   <div className="relative w-64 h-36 flex items-center justify-center select-none animate-float hidden lg:flex shrink-0">
     {/* Ambient Glow */}
-    <div className="absolute inset-0 bg-[#6366f1]/8 rounded-full blur-3xl pointer-events-none" />
+    <div className="absolute inset-0 bg-indigo-50 rounded-full blur-3xl pointer-events-none" />
 
     {/* ATS Score badge floating on left */}
-    <div className="absolute left-0 top-6 bg-[#070611]/90 backdrop-blur-md p-3.5 rounded-2xl border border-[#6366f1]/25 shadow-2xl flex items-center gap-3.5 rotate-[-8deg] z-20 scale-[0.85] shadow-[0_15px_30px_-5px_rgba(99,102,241,0.25)]">
-      <div className="w-11 h-11 rounded-full border-2 border-teal-500/80 flex flex-col items-center justify-center bg-black/40 shadow-[0_0_12px_rgba(20,184,166,0.3)]">
-        <span className="text-xs font-black text-teal-400">92</span>
+    <div className="absolute left-0 top-6 bg-white/90 backdrop-blur-md p-3.5 rounded-2xl border border-slate-200 shadow-xl flex items-center gap-3.5 rotate-[-8deg] z-20 scale-[0.85]">
+      <div className="w-11 h-11 rounded-full border-2 border-emerald-500 flex flex-col items-center justify-center bg-emerald-50 shadow-sm">
+        <span className="text-xs font-black text-emerald-600">92</span>
       </div>
       <div>
-        <p className="text-[10px] font-black text-white uppercase tracking-wider">ATS Score</p>
-        <p className="text-[8px] text-teal-400 font-bold">Excellent match</p>
+        <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider">ATS Score</p>
+        <p className="text-[8px] text-emerald-600 font-bold">Excellent match</p>
       </div>
     </div>
 
     {/* Resume Document card floating on right */}
-    <div className="absolute right-3 top-2 bg-slate-800/95 backdrop-blur-md p-5 rounded-2xl border border-white/5 shadow-2xl w-44 rotate-[6deg] z-10 shadow-[0_15px_35px_-5px_rgba(0,0,0,0.6)]">
+    <div className="absolute right-3 top-2 bg-white/95 backdrop-blur-md p-5 rounded-2xl border border-slate-200 shadow-xl w-44 rotate-[6deg] z-10">
       <div className="flex items-center gap-2 mb-3">
-        <div className="w-2 h-2 rounded-full bg-teal-500 shadow-[0_0_6px_#14b8a6]" />
-        <div className="w-14 h-1.5 bg-slate-700/80 rounded-full" />
+        <div className="w-2 h-2 rounded-full bg-indigo-500 shadow-sm" />
+        <div className="w-14 h-1.5 bg-slate-200 rounded-full" />
       </div>
       <div className="space-y-2">
-        <div className="w-full h-1 bg-slate-800 rounded-full" />
-        <div className="w-[85%] h-1 bg-slate-800 rounded-full" />
-        <div className="w-[90%] h-1 bg-slate-800 rounded-full" />
-        <div className="w-[65%] h-1 bg-slate-800 rounded-full" />
+        <div className="w-full h-1 bg-slate-100 rounded-full" />
+        <div className="w-[85%] h-1 bg-slate-100 rounded-full" />
+        <div className="w-[90%] h-1 bg-slate-100 rounded-full" />
+        <div className="w-[65%] h-1 bg-slate-100 rounded-full" />
       </div>
       
       {/* Miniature column chart inside document */}
-      <div className="flex items-end justify-between gap-1 mt-4 h-6 border-b border-white/5">
-        <span className="w-2.5 bg-teal-500/30 h-2 rounded-t-sm" />
-        <span className="w-2.5 bg-teal-500/50 h-3.5 rounded-t-sm" />
-        <span className="w-2.5 bg-teal-500 h-5 rounded-t-sm shadow-[0_0_5px_rgba(20,184,166,0.4)]" />
-        <span className="w-2.5 bg-blue-500 h-3 rounded-t-sm" />
+      <div className="flex items-end justify-between gap-1 mt-4 h-6 border-b border-slate-100">
+        <span className="w-2.5 bg-indigo-200 h-2 rounded-t-sm" />
+        <span className="w-2.5 bg-indigo-300 h-3.5 rounded-t-sm" />
+        <span className="w-2.5 bg-indigo-500 h-5 rounded-t-sm shadow-sm" />
+        <span className="w-2.5 bg-purple-400 h-3 rounded-t-sm" />
       </div>
     </div>
     
     {/* Micro star sparkles */}
-    <div className="absolute right-2 top-10 w-6 h-6 rounded-full bg-amber-500/10 flex items-center justify-center border border-amber-500/30 text-amber-400 shadow-md rotate-12 animate-pulse">
+    <div className="absolute right-2 top-10 w-6 h-6 rounded-full bg-amber-50 flex items-center justify-center border border-amber-200 text-amber-500 shadow-sm rotate-12 animate-pulse">
       <Sparkles size={10} />
     </div>
   </div>
@@ -116,6 +116,7 @@ export default function ResumeAnalyzer() {
   const debounceRef = useRef(null);
 
   const [targetRole, setTargetRole] = useState('Software Engineer');
+  const [experienceLevel, setExperienceLevel] = useState('Fresher (0-1 years)');
   const [resumeText, setResumeText] = useState('');
   const [file, setFile] = useState(null);
   const [inputMode, setInputMode] = useState('text');
@@ -170,19 +171,79 @@ export default function ResumeAnalyzer() {
 
       let nextY = doc.lastAutoTable.finalY + 15;
 
-      doc.setFontSize(14);
-      doc.text('Overall Verdict', 14, nextY);
-      doc.setFontSize(11);
-      const splitVerdict = doc.splitTextToSize(result.overallVerdict || 'N/A', 180);
-      doc.text(splitVerdict, 14, nextY + 7);
+      if (result.recruiterSimulation) {
+        doc.setFontSize(14);
+        doc.text('Recruiter First Impression', 14, nextY);
+        doc.setFontSize(11);
+        const splitImpression = doc.splitTextToSize(`"${result.recruiterSimulation.technicalImpression || result.recruiterSimulation.projectQualityReview || result.recruiterFirstImpression || 'N/A'}"`, 180);
+        doc.text(splitImpression, 14, nextY + 7);
+        nextY += (splitImpression.length * 6) + 15;
+      }
 
-      nextY += (splitVerdict.length * 6) + 15;
+      if (result.atsEngine && result.atsEngine.missingKeywords && result.atsEngine.missingKeywords.length > 0) {
+        doc.setFontSize(14);
+        doc.text('ATS Missing Keywords', 14, nextY);
+        doc.setFontSize(11);
+        const keywords = result.atsEngine.missingKeywords.join(', ');
+        const splitK = doc.splitTextToSize(keywords, 180);
+        doc.text(splitK, 14, nextY + 7);
+        nextY += (splitK.length * 6) + 15;
+      }
 
-      doc.setFontSize(14);
-      doc.text('Recruiter First Impression', 14, nextY);
-      doc.setFontSize(11);
-      const splitImpression = doc.splitTextToSize(`"${result.recruiterFirstImpression || 'N/A'}"`, 180);
-      doc.text(splitImpression, 14, nextY + 7);
+      if (result.skillAnalysis && result.skillAnalysis.missingCriticalSkills && result.skillAnalysis.missingCriticalSkills.length > 0) {
+        doc.setFontSize(14);
+        doc.text('Missing Critical Skills', 14, nextY);
+        doc.setFontSize(11);
+        const skills = result.skillAnalysis.missingCriticalSkills.join(', ');
+        const splitS = doc.splitTextToSize(skills, 180);
+        doc.text(splitS, 14, nextY + 7);
+        nextY += (splitS.length * 6) + 15;
+      }
+
+      if (result.projectAnalysis && result.projectAnalysis.length > 0) {
+        doc.addPage();
+        doc.setFontSize(16);
+        doc.text('Project Analysis', 14, 20);
+        let pY = 30;
+        result.projectAnalysis.forEach((p, idx) => {
+          doc.setFontSize(12);
+          doc.setFont('helvetica', 'bold');
+          doc.text(`${idx + 1}. ${p.name || 'Project'}`, 14, pY);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(10);
+          const pDesc = doc.splitTextToSize(p.suggestions ? p.suggestions.join('. ') : 'N/A', 180);
+          doc.text(pDesc, 14, pY + 6);
+          pY += (pDesc.length * 5) + 12;
+          if (pY > 270) {
+            doc.addPage();
+            pY = 20;
+          }
+        });
+        nextY = pY + 5;
+      }
+
+      if (result.improvementRoadmap && result.improvementRoadmap.length > 0) {
+        if (nextY > 220) {
+          doc.addPage();
+          nextY = 20;
+        }
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Improvement Roadmap', 14, nextY);
+        doc.setFont('helvetica', 'normal');
+        const roadmapBody = result.improvementRoadmap.map(r => [
+          r.priority || '-',
+          r.action || r.step || '-',
+          r.impact || r.reason || '-'
+        ]);
+        doc.autoTable({
+          startY: nextY + 5,
+          head: [['Priority', 'Action', 'Impact']],
+          body: roadmapBody,
+          theme: 'striped',
+          headStyles: { fillColor: [79, 70, 229] }
+        });
+      }
 
       doc.save(`IntelliHire_Resume_Report_${targetRole.replace(/\s+/g, '_')}.pdf`);
     } catch (err) {
@@ -208,7 +269,7 @@ export default function ResumeAnalyzer() {
 
   const stages = ['Parsing resume structure...', 'Scanning keywords...', 'Analyzing projects...', 'Evaluating skills...', 'Running ATS engine...', 'Simulating recruiter review...', 'Generating insights...'];
 
-  const runAnalysis = useCallback(async (text, role, fileObj, mode) => {
+  const runAnalysis = useCallback(async (text, role, fileObj, mode, expLevel) => {
     const hasContent = mode === 'file' ? !!fileObj : text.trim().length > 100;
     if (!hasContent) return;
     setIsAnalyzing(true); setError(''); setActiveTab(0);
@@ -218,6 +279,7 @@ export default function ResumeAnalyzer() {
     try {
       const fd = new FormData();
       fd.append('target_role', role);
+      fd.append('experience_level', expLevel);
       if (mode === 'file' && fileObj) fd.append('file', fileObj);
       else fd.append('resume_text', text);
       const res = await api.post('/resume/analyze', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
@@ -233,26 +295,26 @@ export default function ResumeAnalyzer() {
   useEffect(() => {
     if (inputMode !== 'text' || resumeText.trim().length < 100) return;
     clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => runAnalysis(resumeText, targetRole, null, 'text'), 2000);
+    debounceRef.current = setTimeout(() => runAnalysis(resumeText, targetRole, null, 'text', experienceLevel), 2000);
     return () => clearTimeout(debounceRef.current);
-  }, [resumeText, targetRole, inputMode, runAnalysis]);
+  }, [resumeText, targetRole, experienceLevel, inputMode, runAnalysis]);
 
   useEffect(() => {
-    if (inputMode === 'file' && file) runAnalysis('', targetRole, file, 'file');
-  }, [file, targetRole, inputMode, runAnalysis]);
+    if (inputMode === 'file' && file) runAnalysis('', targetRole, file, 'file', experienceLevel);
+  }, [file, targetRole, experienceLevel, inputMode, runAnalysis]);
 
   if (!user) return (
     <div className="min-h-[75vh] flex flex-col items-center justify-center gap-6 text-center max-w-md mx-auto fade-in">
-      <div className="w-16 h-16 rounded-2xl bg-teal-500/10 border border-teal-500/25 flex items-center justify-center text-teal-400 shadow-xl animate-float">
+      <div className="w-16 h-16 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shadow-md animate-float">
         <FileText size={32} />
       </div>
       <div className="space-y-2">
-        <h2 className="text-2xl font-extrabold text-white font-sans">Sign in to analyze your resume</h2>
-        <p className="text-sm text-slate-400 font-semibold leading-relaxed">Get enterprise-grade AI resume intelligence powered by Gemini.</p>
+        <h2 className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 font-sans">Sign in to analyze your resume</h2>
+        <p className="text-sm text-slate-500 font-medium leading-relaxed">Get enterprise-grade AI resume intelligence powered by Gemini.</p>
       </div>
       <div className="flex gap-4.5 w-full mt-3">
-        <button onClick={() => router.push('/login')} className="btn-primary flex-1">Sign In</button>
-        <button onClick={() => router.push('/register')} className="btn-secondary flex-1">Create Account</button>
+        <button onClick={() => router.push('/login')} className="flex-1 py-2.5 bg-[#3b59df] text-white rounded-xl font-bold hover:bg-[#2c45b8] transition-colors">Sign In</button>
+        <button onClick={() => router.push('/register')} className="flex-1 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-colors">Create Account</button>
       </div>
     </div>
   );
@@ -261,20 +323,17 @@ export default function ResumeAnalyzer() {
     <div className="py-6 space-y-6 fade-in max-w-7xl mx-auto">
       
       {/* ─── Premium Header Banner ─── */}
-      <div className="glass-premium p-8 md:p-10 border border-slate-700/50 bg-slate-800/50 shadow-2xl relative flex flex-col md:flex-row items-center justify-between gap-8 overflow-hidden rounded-[2.5rem]">
-        {/* Glow Circles */}
-        <div className="absolute top-[-50%] left-[-10%] w-[380px] h-[380px] bg-teal-600/15 rounded-full blur-[100px] pointer-events-none" />
-        <div className="absolute bottom-[-30%] right-[10%] w-[300px] h-[300px] bg-blue-600/10 rounded-full blur-[90px] pointer-events-none" />
-
+      <div className="bg-gradient-to-br from-indigo-50 to-purple-50 p-8 md:p-10 border border-indigo-100 shadow-sm relative flex flex-col md:flex-row items-center justify-between gap-8 overflow-hidden rounded-[2.5rem]">
+        
         <div className="flex-1 space-y-3 text-center md:text-left relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/10 border border-teal-500/25 text-teal-300 font-extrabold text-[10px] uppercase tracking-widest shadow-md">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 font-extrabold text-[10px] uppercase tracking-widest shadow-sm">
             <Sparkles size={12} className="animate-spin-slow" /> AI-Powered
           </div>
           
-          <h1 className="text-3xl md:text-4xl font-black tracking-tight text-white leading-tight font-sans">
-            AI <span className="text-teal-400">Resume Analyzer</span>
+          <h1 className="text-3xl md:text-4xl font-black tracking-tight text-slate-900 leading-tight font-sans">
+            AI <span className="text-[#3b59df]">Resume Analyzer</span>
           </h1>
-          <p className="text-slate-300 max-w-xl text-sm font-semibold leading-relaxed">
+          <p className="text-slate-600 max-w-xl text-sm font-medium leading-relaxed">
             Deep line-by-line analysis. Real-time ATS scoring. Recruiter simulation. Powered by Gemini AI.
           </p>
         </div>
@@ -290,44 +349,70 @@ export default function ResumeAnalyzer() {
         <div className="lg:col-span-1 space-y-6">
           
           {/* Target Role selection (Step 1) */}
-          <div className="glass-premium p-6 border border-slate-700/50 shadow-lg relative rounded-[1.5rem]">
+          <div className="bg-white p-6 border border-slate-200 shadow-sm relative rounded-[1.5rem]">
             <div className="flex items-center gap-2.5 mb-3">
-              <span className="w-5 h-5 rounded-full bg-teal-500 text-white font-extrabold text-[10px] flex items-center justify-center shrink-0 shadow-md">
+              <span className="w-5 h-5 rounded-full bg-[#3b59df] text-white font-extrabold text-[10px] flex items-center justify-center shrink-0 shadow-sm">
                 1
               </span>
-              <h3 className="text-sm font-extrabold text-white tracking-wide flex items-center gap-2 font-sans">
-                <Briefcase size={14} className="text-teal-400" /> Target Job Role
+              <h3 className="text-sm font-extrabold text-slate-800 tracking-wide flex items-center gap-2 font-sans">
+                <Briefcase size={14} className="text-[#3b59df]" /> Target Job Role
               </h3>
             </div>
             
-            <div className="custom-select-wrap">
-              <Briefcase className="input-icon" size={15} />
+            <div className="relative flex items-center">
+              <Briefcase className="absolute left-4 text-slate-400" size={15} />
               <select
                 value={targetRole}
                 onChange={e => setTargetRole(e.target.value)}
-                className="input-field cursor-pointer font-semibold appearance-none pr-10 py-2.5"
+                className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#3b59df]/20 focus:border-[#3b59df] transition-all appearance-none cursor-pointer"
               >
                 {ROLES.map(r => (
-                  <option key={r} value={r} className="bg-[#0b0a1a] text-white">{r}</option>
+                  <option key={r} value={r}>{r}</option>
                 ))}
               </select>
               <ChevronDown className="absolute right-4 text-slate-500 pointer-events-none" size={14} />
             </div>
           </div>
 
-          {/* Upload Resume Container (Step 2) */}
-          <div className="glass-premium p-6 border border-slate-700/50 shadow-lg relative rounded-[1.5rem]">
+          {/* Experience Level selection (Step 2) */}
+          <div className="bg-white p-6 border border-slate-200 shadow-sm relative rounded-[1.5rem]">
             <div className="flex items-center gap-2.5 mb-3">
-              <span className="w-5 h-5 rounded-full bg-teal-500 text-white font-extrabold text-[10px] flex items-center justify-center shrink-0 shadow-md">
+              <span className="w-5 h-5 rounded-full bg-[#3b59df] text-white font-extrabold text-[10px] flex items-center justify-center shrink-0 shadow-sm">
                 2
               </span>
-              <h3 className="text-sm font-extrabold text-white tracking-wide flex items-center gap-2 font-sans">
-                <FileText size={14} className="text-teal-400" /> Upload Resume
+              <h3 className="text-sm font-extrabold text-slate-800 tracking-wide flex items-center gap-2 font-sans">
+                <User size={14} className="text-[#3b59df]" /> Experience Level
+              </h3>
+            </div>
+            
+            <div className="relative flex items-center">
+              <User className="absolute left-4 text-slate-400" size={15} />
+              <select
+                value={experienceLevel}
+                onChange={e => setExperienceLevel(e.target.value)}
+                className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#3b59df]/20 focus:border-[#3b59df] transition-all appearance-none cursor-pointer"
+              >
+                {['Fresher (0-1 years)', 'Junior (1-3 years)', 'Mid-Level (3-5 years)', 'Senior (5+ years)'].map(r => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-4 text-slate-500 pointer-events-none" size={14} />
+            </div>
+          </div>
+
+          {/* Upload Resume Container (Step 3) */}
+          <div className="bg-white p-6 border border-slate-200 shadow-sm relative rounded-[1.5rem]">
+            <div className="flex items-center gap-2.5 mb-3">
+              <span className="w-5 h-5 rounded-full bg-[#3b59df] text-white font-extrabold text-[10px] flex items-center justify-center shrink-0 shadow-sm">
+                3
+              </span>
+              <h3 className="text-sm font-extrabold text-slate-800 tracking-wide flex items-center gap-2 font-sans">
+                <FileText size={14} className="text-[#3b59df]" /> Upload Resume
               </h3>
             </div>
 
             {/* Paste/Upload Tabs Toggle */}
-            <div className="flex gap-1 bg-[#03030a] p-1.5 rounded-xl border border-white/5 mb-4">
+            <div className="flex gap-1 bg-slate-100 p-1.5 rounded-xl border border-slate-200 mb-4">
               {[
                 { label: '✏️ Paste Text', mode: 'text' },
                 { label: '📎 Upload File', mode: 'file' }
@@ -337,8 +422,8 @@ export default function ResumeAnalyzer() {
                   onClick={() => setInputMode(tab.mode)}
                   className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold cursor-pointer transition-all duration-300 ${
                     inputMode === tab.mode 
-                      ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md border-t border-white/10' 
-                      : 'text-slate-400 hover:text-slate-200'
+                      ? 'bg-white text-slate-800 shadow-sm border border-slate-200' 
+                      : 'text-slate-500 hover:text-slate-700'
                   }`}
                 >
                   {tab.label}
@@ -349,17 +434,17 @@ export default function ResumeAnalyzer() {
             {/* Paste mode layout */}
             {inputMode === 'text' ? (
               <div className="space-y-3">
-                <div className="relative overflow-hidden rounded-xl border border-white/5 bg-[#03030a]">
+                <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
                   <textarea 
                     value={resumeText} 
                     onChange={e => setResumeText(e.target.value)}
-                    className="w-full bg-transparent p-3 text-[11px] text-slate-300 font-mono leading-relaxed outline-none min-h-[160px] resize-y"
+                    className="w-full bg-transparent p-3 text-[11px] text-slate-700 font-mono leading-relaxed outline-none min-h-[160px] resize-y"
                     placeholder="Paste your complete resume here... Make sure to include all sections for accurate analysis." 
                   />
                   
                   {isAnalyzing && (
                     <motion.div 
-                      className="absolute left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-indigo-500 to-transparent shadow-[0_0_12px_#6366f1]"
+                      className="absolute left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-indigo-500 to-transparent"
                       initial={{ top: '0%' }}
                       animate={{ top: '100%' }}
                       transition={{ duration: 2.2, repeat: Infinity, ease: "linear" }}
@@ -367,24 +452,24 @@ export default function ResumeAnalyzer() {
                   )}
 
                   {/* Character trackers */}
-                  <div className="flex items-center gap-3 px-3 py-1.5 border-t border-white/[0.04] bg-white/[0.01] text-[9px] text-slate-500 font-semibold font-sans">
-                    <div>Words: <span className="text-slate-300 font-extrabold">{localStats.words}</span></div>
-                    <div>Keywords: <span className="text-teal-400 font-extrabold">{localStats.keywords}/{localStats.totalKeywords}</span></div>
+                  <div className="flex items-center gap-3 px-3 py-1.5 border-t border-slate-200 bg-slate-100 text-[9px] text-slate-600 font-semibold font-sans">
+                    <div>Words: <span className="text-slate-800 font-extrabold">{localStats.words}</span></div>
+                    <div>Keywords: <span className="text-[#3b59df] font-extrabold">{localStats.keywords}/{localStats.totalKeywords}</span></div>
                     <div className="ml-auto">{resumeText.length} / 20,000</div>
                   </div>
                 </div>
 
                 {resumeText.length >= 100 && (
-                  <div className="p-2.5 rounded-xl border flex items-center gap-2 bg-indigo-500/5 border-indigo-500/15">
+                  <div className="p-2.5 rounded-xl border flex items-center gap-2 bg-indigo-50 border-indigo-100">
                     {isAnalyzing ? (
                       <>
-                        <RefreshCw size={11} className="text-indigo-400 animate-spin" />
-                        <span className="text-[11px] font-bold text-indigo-400 leading-none">{scanStage}</span>
+                        <RefreshCw size={11} className="text-indigo-600 animate-spin" />
+                        <span className="text-[11px] font-bold text-indigo-600 leading-none">{scanStage}</span>
                       </>
                     ) : (
                       <>
-                        <span className="w-1.5 h-1.5 rounded-full bg-teal-500 shadow-[0_0_6px_#14b8a6]" />
-                        <span className="text-[11px] font-bold text-teal-400 leading-none">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-sm" />
+                        <span className="text-[11px] font-bold text-emerald-600 leading-none">
                           {lastUpdated ? `Updated at ${lastUpdated}` : 'Ready to analyze'}
                         </span>
                       </>
@@ -395,11 +480,11 @@ export default function ResumeAnalyzer() {
                 {/* Clean Analyze Trigger button */}
                 <button 
                   disabled={isAnalyzing || resumeText.length < 100}
-                  onClick={() => runAnalysis(resumeText, targetRole, null, 'text')}
-                  className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-extrabold text-xs border-t transition-all ${
+                  onClick={() => runAnalysis(resumeText, targetRole, null, 'text', experienceLevel)}
+                  className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-extrabold text-xs transition-all shadow-sm ${
                     resumeText.length >= 100 
-                      ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 text-white cursor-pointer shadow-lg border-white/10'
-                      : 'bg-white/5 border-white/[0.02] text-slate-600 cursor-not-allowed'
+                      ? 'bg-[#3b59df] hover:bg-[#2c45b8] text-white cursor-pointer'
+                      : 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
                   }`}
                 >
                   <Sparkles size={14} /> Analyze Resume
@@ -415,41 +500,41 @@ export default function ResumeAnalyzer() {
                   onClick={() => fileInputRef.current?.click()}
                   className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all ${
                     isDragging 
-                      ? 'border-indigo-500 bg-indigo-500/5' 
+                      ? 'border-indigo-400 bg-indigo-50' 
                       : file 
-                        ? 'border-teal-500/40 bg-teal-500/[0.01]' 
-                        : 'border-white/10 hover:border-white/20 bg-white/[0.01]'
+                        ? 'border-emerald-300 bg-emerald-50' 
+                        : 'border-slate-300 hover:border-indigo-400 hover:bg-slate-50 bg-white'
                   }`}
                 >
                   <input ref={fileInputRef} type="file" accept=".pdf,.txt" style={{ display: 'none' }} onChange={e => { const f = e.target.files[0]; if (f) { setFile(f); setError(''); } }} />
                   
                   {file ? (
                     <div className="flex flex-col items-center gap-3">
-                      <FileText size={42} className="text-teal-400" />
+                      <FileText size={42} className="text-emerald-500" />
                       <div>
-                        <p className="text-xs font-extrabold text-white truncate max-w-[200px]">{file.name}</p>
+                        <p className="text-xs font-extrabold text-slate-800 truncate max-w-[200px]">{file.name}</p>
                         <p className="text-[10px] text-slate-500 font-bold mt-0.5">{(file.size / 1024).toFixed(1)} KB</p>
                       </div>
                       
-                      {isAnalyzing && <div className="text-xs font-bold text-indigo-400 animate-pulse mt-2">{scanStage}</div>}
+                      {isAnalyzing && <div className="text-xs font-bold text-indigo-600 animate-pulse mt-2">{scanStage}</div>}
                       
                       <button 
                         onClick={e => { e.stopPropagation(); setFile(null); setResult(null); }} 
-                        className="flex items-center gap-1.5 text-xs font-bold text-red-400 bg-none border-none cursor-pointer hover:text-red-300 mt-2"
+                        className="flex items-center gap-1.5 text-xs font-bold text-red-500 bg-none border-none cursor-pointer hover:text-red-600 mt-2"
                       >
                         <X size={12} /> Remove
                       </button>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center gap-3.5">
-                      <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-slate-400 border border-white/10 animate-pulse">
+                      <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 border border-slate-200">
                         <FilePlus size={22} />
                       </div>
                       <div>
-                        <p className="text-xs font-extrabold text-white">Drag & drop PDF / TXT</p>
+                        <p className="text-xs font-extrabold text-slate-800">Drag & drop PDF / TXT</p>
                         <p className="text-[10px] text-slate-500 font-bold mt-1">Auto-scans immediately on upload</p>
                       </div>
-                      <div className="px-4 py-2 mt-2 text-xs font-bold text-indigo-300 border border-indigo-500/20 bg-indigo-500/5 rounded-xl hover:bg-indigo-500/10">
+                      <div className="px-4 py-2 mt-2 text-xs font-bold text-indigo-600 border border-indigo-200 bg-indigo-50 rounded-xl hover:bg-indigo-100">
                         Browse Files
                       </div>
                     </div>
@@ -459,12 +544,12 @@ export default function ResumeAnalyzer() {
             )}
           </div>
 
-          {error && <div className="p-4 rounded-xl border border-red-500/15 bg-red-500/5 text-red-400 text-xs font-semibold leading-relaxed">⚠️ {error}</div>}
+          {error && <div className="p-4 rounded-xl border border-red-200 bg-red-50 text-red-600 text-xs font-semibold leading-relaxed">⚠️ {error}</div>}
 
           {result && (
             <button 
               onClick={() => { setResult(null); setResumeText(''); setFile(null); setLastUpdated(''); }} 
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-white/10 hover:border-white/20 bg-white/5 hover:bg-white/10 text-xs font-bold text-slate-300 cursor-pointer transition-colors"
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-slate-200 hover:bg-slate-50 bg-white text-xs font-bold text-slate-600 cursor-pointer transition-colors shadow-sm"
             >
               <RefreshCw size={13} /> Clear & Restart
             </button>
@@ -482,28 +567,28 @@ export default function ResumeAnalyzer() {
                 initial={{ opacity: 0 }} 
                 animate={{ opacity: 1 }} 
                 exit={{ opacity: 0 }}
-                className="glass-premium p-12 border border-white/5 shadow-xl flex flex-col items-center justify-center gap-8 min-h-[500px]"
+                className="bg-white p-12 border border-slate-200 rounded-3xl shadow-sm flex flex-col items-center justify-center gap-8 min-h-[500px]"
               >
                 <div className="relative">
                   {/* Rotating loader ring */}
-                  <div className="w-20 h-20 rounded-full border-4 border-indigo-500/10 border-t-indigo-500 border-r-purple-500 animate-spin" />
+                  <div className="w-20 h-20 rounded-full border-4 border-indigo-100 border-t-indigo-600 border-r-purple-500 animate-spin" />
                   <div className="absolute inset-0 flex items-center justify-center text-3xl select-none">🧠</div>
                 </div>
 
                 <div className="text-center space-y-3 max-w-sm">
-                  <h3 className="text-xl font-extrabold text-white font-sans">Deep AI Analysis Running</h3>
-                  <p className="text-sm font-bold text-indigo-400 animate-pulse">{scanStage}</p>
+                  <h3 className="text-xl font-extrabold text-slate-900 font-sans">Deep AI Analysis Running</h3>
+                  <p className="text-sm font-bold text-indigo-600 animate-pulse">{scanStage}</p>
                   
                   {/* Glowing progress line */}
-                  <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden relative border border-white/[0.02]">
+                  <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden relative">
                     <motion.div 
-                      className="h-full bg-gradient-to-r from-indigo-500 via-indigo-500 to-indigo-600 shadow-[0_0_10px_rgba(99,102,241,0.5)]"
+                      className="h-full bg-indigo-500"
                       initial={{ width: '0%' }}
                       animate={{ width: '100%' }}
                       transition={{ duration: 12, ease: "linear" }}
                     />
                   </div>
-                  <p className="text-xs text-slate-500 font-semibold">Analyzing for target role: {targetRole}</p>
+                  <p className="text-xs text-slate-500 font-medium">Analyzing for target role: {targetRole}</p>
                 </div>
 
                 {/* Sub-stages indicators */}
@@ -516,7 +601,7 @@ export default function ResumeAnalyzer() {
                     'ATS engine',
                     'Recruiter simulation'
                   ].map((s) => (
-                    <span key={s} className="px-3 py-1.5 rounded-xl border border-indigo-500/15 bg-indigo-500/5 text-[10px] font-bold text-indigo-300">
+                    <span key={s} className="px-3 py-1.5 rounded-xl border border-indigo-200 bg-indigo-50 text-[10px] font-bold text-indigo-600">
                       ⚙️ {s}
                     </span>
                   ))}
@@ -531,16 +616,16 @@ export default function ResumeAnalyzer() {
                 initial={{ opacity: 0 }} 
                 animate={{ opacity: 1 }} 
                 exit={{ opacity: 0 }}
-                className="glass-premium p-6 md:p-8 border border-slate-700/50 shadow-xl flex flex-col items-center justify-center gap-6 min-h-[420px]"
+                className="bg-white p-6 md:p-8 border border-slate-200 rounded-3xl shadow-sm flex flex-col items-center justify-center gap-6 min-h-[420px]"
               >
                 {/* Visual anchor logo */}
-                <div className="w-16 h-16 rounded-2xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400 text-2xl shadow-xl animate-float font-sans font-black">
+                <div className="w-16 h-16 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 text-2xl shadow-sm">
                   <BarChart2 size={32} />
                 </div>
                 
                 <div className="text-center space-y-4 max-w-sm">
-                  <h3 className="text-2xl font-extrabold text-white font-sans">Ready to Analyze</h3>
-                  <p className="text-sm text-slate-400 font-semibold leading-relaxed">
+                  <h3 className="text-2xl font-extrabold text-slate-900 font-sans">Ready to Analyze</h3>
+                  <p className="text-sm text-slate-500 font-medium leading-relaxed">
                     Paste your resume text or upload a PDF on the left panel to begin. Our AI will instantly scan your resume against your selected target role and provide actionable insights.
                   </p>
                 </div>
@@ -559,8 +644,8 @@ export default function ResumeAnalyzer() {
                       onClick={() => setActiveTab(i)} 
                       className={`px-5 py-2.5 rounded-xl text-sm font-bold cursor-pointer transition-all duration-300 shrink-0 ${
                         activeTab === i 
-                          ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-lg border-t border-white/10' 
-                          : 'bg-white/5 border border-white/5 text-slate-400 hover:text-slate-200'
+                          ? 'bg-[#3b59df] text-white shadow-sm' 
+                          : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
                       }`}
                     >
                       {tab}
@@ -570,20 +655,20 @@ export default function ResumeAnalyzer() {
                   {/* Download button */}
                   <button 
                     onClick={downloadReport} 
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold cursor-pointer border bg-teal-500/10 border-teal-500/35 hover:bg-teal-500/20 text-teal-400 shrink-0 transition-colors ml-auto shadow-md hover:shadow-lg"
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold cursor-pointer border bg-indigo-50 border-indigo-200 hover:bg-indigo-100 text-indigo-700 shrink-0 transition-colors ml-auto shadow-sm"
                   >
                     <Download size={15} /> Download Report
                   </button>
 
                   {isAnalyzing && (
-                    <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-sm font-bold text-indigo-400 shrink-0 select-none">
+                    <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-50 border border-indigo-200 text-sm font-bold text-indigo-600 shrink-0 select-none">
                       <RefreshCw size={14} className="animate-spin" /> Re-analyzing...
                     </div>
                   )}
                 </div>
 
                 {/* Sub panels contents display */}
-                <div className="glass p-8 border border-white/5 shadow-xl relative rounded-[1.5rem] min-h-[500px]">
+                <div className="bg-white p-8 border border-slate-200 shadow-sm relative rounded-[1.5rem] min-h-[500px]">
                   <AnimatePresence mode="wait">
                     {activeTab === 0 && <motion.div key="t0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><ScoreOverview data={result} /></motion.div>}
                     {activeTab === 1 && <motion.div key="t1" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><SectionAnalysis data={result} /></motion.div>}

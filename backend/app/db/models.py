@@ -9,6 +9,10 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     full_name = Column(String)
+    target_role = Column(String, nullable=True)
+    preferences_json = Column(Text, nullable=True)
+    reset_otp = Column(String, nullable=True)
+    reset_otp_expires = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 class Resume(Base):
@@ -35,6 +39,7 @@ class InterviewSession(Base):
     role = Column(String)
     type = Column(String)
     difficulty = Column(String)
+    resume_text = Column(Text, nullable=True)
     overall_score = Column(Float, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     

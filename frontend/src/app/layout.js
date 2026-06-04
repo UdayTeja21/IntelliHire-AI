@@ -13,7 +13,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="min-h-screen antialiased bg-[#050511] text-white overflow-hidden flex">
+      <body className="min-h-screen antialiased bg-[#f8f9fc] text-slate-900 overflow-hidden flex">
         <ThemeProvider>
           <AuthProvider>
             <ToastProvider>

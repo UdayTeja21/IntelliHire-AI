@@ -31,7 +31,7 @@ def generate_groq(prompt: str, max_retries: int = 2) -> str:
     for attempt in range(max_retries + 1):
         try:
             # Set strict timeout to prevent freezing
-            response = requests.post(url, headers=headers, json=payload, timeout=25)
+            response = requests.post(url, headers=headers, json=payload, timeout=60)
             response.raise_for_status()
             data = response.json()
             return data["choices"][0]["message"]["content"]

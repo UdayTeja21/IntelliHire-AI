@@ -15,6 +15,11 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: Optional[str] = None
     GROQ_API_KEY: Optional[str] = None
     OPENROUTER_API_KEY: Optional[str] = None
+    RESEND_API_KEY: Optional[str] = None
+    
+    # SMTP
+    SMTP_USER: str = "udayteja274@gmail.com"
+    SMTP_PASSWORD: Optional[str] = None
     
     class Config:
         case_sensitive = True

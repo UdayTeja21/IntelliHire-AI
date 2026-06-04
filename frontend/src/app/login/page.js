@@ -111,7 +111,12 @@ export default function Login() {
 
             {/* Password */}
             <div>
-              <label className="label">Password</label>
+              <div className="flex justify-between items-center mb-1">
+                <label className="label !mb-0">Password</label>
+                <Link href="/forgot-password" className="text-xs text-indigo-400 hover:text-indigo-300 font-medium transition-colors">
+                  Forgot password?
+                </Link>
+              </div>
               <div className="relative">
                 <input
                   {...register('password', { required: 'Password is required' })}
