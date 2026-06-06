@@ -13,14 +13,14 @@ export default function Materials() {
   ];
 
   return (
-    <div className="py-6 space-y-6 max-w-7xl mx-auto">
+    <div className="py-6 space-y-6 max-w-7xl mx-auto fade-in">
       <div className="flex items-center gap-3 mb-8">
-        <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center border border-amber-200 shadow-sm">
-          <Bookmark className="text-amber-500" size={24} />
+        <div className="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center border border-amber-200 dark:border-amber-500/20 shadow-sm">
+          <Bookmark className="text-amber-500 dark:text-amber-400" size={24} />
         </div>
         <div>
-          <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">Saved Materials</h1>
-          <p className="text-slate-500 text-sm font-medium mt-1">Curated resources and templates to help you prepare.</p>
+          <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">Saved Materials</h1>
+          <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mt-1">Curated resources and templates to help you prepare.</p>
         </div>
       </div>
 
@@ -31,15 +31,15 @@ export default function Materials() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
             key={mat.id} 
-            className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col h-full group hover:shadow-md hover:border-slate-300 transition-all"
+            className="bg-white dark:bg-[#121629] rounded-2xl p-6 border border-slate-200 dark:border-white/5 shadow-sm flex flex-col h-full group hover:shadow-md hover:border-slate-300 dark:hover:border-white/10 transition-all"
           >
-            <div className={`w-12 h-12 rounded-xl ${mat.bg} border flex items-center justify-center mb-4`}>
-              <mat.icon className={mat.color} size={24} />
+            <div className={`w-12 h-12 rounded-xl ${mat.bg.replace('bg-', 'bg-').replace('border-', 'border-')} dark:bg-slate-800/50 dark:border-white/5 border flex items-center justify-center mb-4`}>
+              <mat.icon className={`${mat.color}`} size={24} />
             </div>
-            <h3 className="text-lg font-bold text-slate-800 mb-2 group-hover:text-indigo-600 transition-colors">{mat.title}</h3>
-            <p className="text-slate-500 font-medium text-sm flex-1 leading-relaxed">{mat.desc}</p>
+            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{mat.title}</h3>
+            <p className="text-slate-500 dark:text-slate-400 font-medium text-sm flex-1 leading-relaxed">{mat.desc}</p>
             
-            <a href={mat.link} target="_blank" rel="noopener noreferrer" className="mt-6 w-full py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-sm font-bold flex items-center justify-center gap-2 transition-colors">
+            <a href={mat.link} target="_blank" rel="noopener noreferrer" className="mt-6 w-full py-2.5 rounded-xl bg-slate-50 dark:bg-[#1a1f33] hover:bg-slate-100 dark:hover:bg-[#252b43] border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 text-sm font-bold flex items-center justify-center gap-2 transition-colors">
               Access Resource <ExternalLink size={14} />
             </a>
           </motion.div>

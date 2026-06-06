@@ -17,15 +17,15 @@ function StatCard({ icon: Icon, title, value, color, delay }) {
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }}
-      className={`bg-white p-5 flex items-center gap-5 rounded-2xl relative overflow-hidden group border border-slate-200 shadow-sm hover:shadow-md transition-shadow`}>
+      className={`bg-white dark:bg-[#121629] p-5 flex items-center gap-5 rounded-2xl relative overflow-hidden group border border-slate-200 dark:border-white/5 shadow-sm hover:shadow-md transition-shadow`}>
       <div className={`absolute inset-0 bg-gradient-to-r ${colorMap[color].split(' ')[0]} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
       
       <div className={`relative z-10 w-14 h-14 rounded-full flex items-center justify-center border shadow-sm ${colorMap[color].split(' ').slice(1).join(' ')}`}>
         <Icon size={24} />
       </div>
       <div className="relative z-10">
-        <p className="text-sm font-bold text-slate-500 mb-1">{title}</p>
-        <p className="text-3xl font-extrabold text-slate-800">{value}</p>
+        <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-1">{title}</p>
+        <p className="text-3xl font-extrabold text-slate-800 dark:text-slate-200">{value}</p>
       </div>
     </motion.div>
   );
@@ -148,33 +148,33 @@ export default function Reports() {
 
   if (!user) return (
     <div className="min-h-[75vh] flex flex-col items-center justify-center gap-6 text-center max-w-md mx-auto fade-in">
-      <div className="w-16 h-16 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shadow-md animate-float">
+      <div className="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shadow-md animate-float">
         <BarChart2 size={32} />
       </div>
       <div className="space-y-2">
-        <h2 className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 font-sans">Sign in to view reports</h2>
-        <p className="text-sm text-slate-500 font-medium leading-relaxed">Please sign in to see your interview analytics and performance trajectory.</p>
+        <h2 className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 font-sans">Sign in to view reports</h2>
+        <p className="text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed">Please sign in to see your interview analytics and performance trajectory.</p>
       </div>
       <div className="flex gap-4.5 w-full mt-3">
         <button onClick={() => router.push('/login')} className="flex-1 py-2.5 bg-[#3b59df] text-white rounded-xl font-bold hover:bg-[#2c45b8] transition-colors">Sign In</button>
-        <button onClick={() => router.push('/register')} className="flex-1 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-colors">Create Account</button>
+        <button onClick={() => router.push('/register')} className="flex-1 py-2.5 bg-white dark:bg-[#121629] border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 rounded-xl font-bold hover:bg-slate-50 dark:hover:bg-[#1a1f33] transition-colors">Create Account</button>
       </div>
     </div>
   );
 
   return (
-    <div className="py-6 space-y-8 max-w-7xl mx-auto">
+    <div className="py-6 space-y-8 max-w-7xl mx-auto fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-indigo-50 flex items-center justify-center border border-indigo-100 shadow-sm">
-            <BarChart2 className="text-indigo-600" size={28} />
+          <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center border border-indigo-100 dark:border-indigo-500/20 shadow-sm">
+            <BarChart2 className="text-indigo-600 dark:text-indigo-400" size={28} />
           </div>
           <div>
-            <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">Analytics & Reports</h1>
-            <p className="text-slate-500 text-sm mt-1 font-medium">Deep dive into your interview and resume metrics.</p>
+            <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">Analytics & Reports</h1>
+            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1 font-medium">Deep dive into your interview and resume metrics.</p>
           </div>
         </div>
-        <button onClick={handleExport} className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 px-5 py-2.5 rounded-xl text-sm font-bold text-slate-700 transition-colors shadow-sm">
+        <button onClick={handleExport} className="flex items-center gap-2 bg-white dark:bg-[#121629] border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-[#1a1f33] px-5 py-2.5 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-300 transition-colors shadow-sm">
           <Download size={16} /> Export Data
         </button>
       </div>
@@ -188,18 +188,18 @@ export default function Reports() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
-          className="bg-white border border-slate-200 shadow-sm rounded-3xl min-h-[400px] p-8 flex flex-col lg:col-span-2 relative overflow-hidden">
+          className="bg-white dark:bg-[#121629] border border-slate-200 dark:border-white/5 shadow-sm rounded-3xl min-h-[400px] p-8 flex flex-col lg:col-span-2 relative overflow-hidden">
           
-          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50 dark:bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
           <div className="flex items-center justify-between mb-8 relative z-10">
             <div>
-              <h3 className="text-xl font-bold text-slate-900">Performance Trajectory</h3>
-              <p className="text-sm text-slate-500 font-medium mt-1">Tracking your mock interview scores over the last 7 days</p>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white">Performance Trajectory</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">Tracking your mock interview scores over the last 7 days</p>
             </div>
           </div>
           
-          <div className="flex-1 w-full relative bg-slate-50/50 rounded-2xl border border-slate-100 p-4 z-10">
+          <div className="flex-1 w-full relative bg-slate-50/50 dark:bg-[#1a1f33]/50 rounded-2xl border border-slate-100 dark:border-white/5 p-4 z-10">
             {stats.lineData?.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={stats.lineData}>
@@ -221,22 +221,22 @@ export default function Reports() {
               </ResponsiveContainer>
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-center">
-                <BarChart2 size={48} className="text-slate-300 mb-4" />
-                <h4 className="text-lg font-bold text-slate-700 mb-2">No historical data</h4>
-                <p className="text-sm text-slate-500 max-w-xs font-medium">Complete some mock interviews to see your progress chart here.</p>
+                <BarChart2 size={48} className="text-slate-300 dark:text-slate-600 mb-4" />
+                <h4 className="text-lg font-bold text-slate-700 dark:text-slate-300 mb-2">No historical data</h4>
+                <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs font-medium">Complete some mock interviews to see your progress chart here.</p>
               </div>
             )}
           </div>
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
-          className="bg-white border border-slate-200 shadow-sm rounded-3xl min-h-[400px] p-6 flex flex-col items-center text-center">
+          className="bg-white dark:bg-[#121629] border border-slate-200 dark:border-white/5 shadow-sm rounded-3xl min-h-[400px] p-6 flex flex-col items-center text-center">
           <div className="mb-4">
-            <h3 className="text-lg font-bold text-slate-900">Recruiter Readiness</h3>
-            <p className="text-xs text-slate-500 font-medium mt-1">Multi-dimensional skill breakdown</p>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Recruiter Readiness</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">Multi-dimensional skill breakdown</p>
           </div>
           
-          <div className="flex-1 w-full bg-slate-50/50 rounded-2xl border border-slate-100 relative">
+          <div className="flex-1 w-full bg-slate-50/50 dark:bg-[#1a1f33]/50 rounded-2xl border border-slate-100 dark:border-white/5 relative">
             {stats.radarData && stats.radarData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <RadarChart cx="50%" cy="50%" outerRadius="65%" data={stats.radarData}>

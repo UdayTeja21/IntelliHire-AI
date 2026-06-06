@@ -1,8 +1,10 @@
 import './globals.css';
 import { AuthProvider } from '../context/AuthContext';
 import { ThemeProvider } from '../context/ThemeContext';
+import { SidebarProvider } from '../context/SidebarContext';
+import { NotificationProvider } from '../context/NotificationContext';
 import Sidebar from '../components/layout/Sidebar';
-import Topbar from '../components/layout/Topbar';
+import MainLayoutWrapper from '../components/layout/MainLayoutWrapper';
 import { ToastProvider } from '../components/Toast';
 
 export const metadata = {
@@ -13,20 +15,19 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="min-h-screen antialiased bg-[#f8f9fc] text-slate-900 overflow-hidden flex">
+      <body className="min-h-screen antialiased bg-[#f8f9fc] dark:bg-[#0b0f19] text-slate-900 dark:text-slate-100 overflow-hidden flex transition-colors duration-300">
         <ThemeProvider>
           <AuthProvider>
-            <ToastProvider>
-              <Sidebar />
-              <div className="flex-1 flex flex-col h-screen overflow-hidden ml-[260px]">
-                <Topbar />
-                <main className="flex-1 overflow-y-auto p-6 md:p-8">
-                  <div className="max-w-6xl mx-auto w-full">
+            <NotificationProvider>
+              <SidebarProvider>
+                <ToastProvider>
+                  <Sidebar />
+                  <MainLayoutWrapper>
                     {children}
-                  </div>
-                </main>
-              </div>
-            </ToastProvider>
+                  </MainLayoutWrapper>
+                </ToastProvider>
+              </SidebarProvider>
+            </NotificationProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

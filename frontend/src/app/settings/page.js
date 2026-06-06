@@ -139,7 +139,7 @@ export default function Settings() {
       className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${
         activeTab === id 
           ? 'bg-[#3b59df] text-white shadow-md' 
-          : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+          : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#1a1f33]'
       }`}
     >
       <Icon size={18} /> {label}
@@ -147,10 +147,10 @@ export default function Settings() {
   );
 
   const ToggleSwitch = ({ label, description, isChecked, onChange }) => (
-    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
+    <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-[#121629] rounded-xl border border-slate-100 dark:border-white/5">
       <div>
-        <h4 className="text-sm font-bold text-slate-800">{label}</h4>
-        <p className="text-xs text-slate-500 font-medium mt-0.5">{description}</p>
+        <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">{label}</h4>
+        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">{description}</p>
       </div>
       <button 
         onClick={onChange}
@@ -163,16 +163,16 @@ export default function Settings() {
 
   if (!user) return (
     <div className="min-h-[75vh] flex flex-col items-center justify-center gap-6 text-center max-w-md mx-auto fade-in">
-      <div className="w-16 h-16 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shadow-md animate-float">
+      <div className="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shadow-md animate-float">
         <SettingsIcon size={32} />
       </div>
       <div className="space-y-2">
-        <h2 className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 font-sans">Sign in to manage settings</h2>
-        <p className="text-sm text-slate-500 font-medium leading-relaxed">Please sign in to access and update your account preferences.</p>
+        <h2 className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 font-sans">Sign in to manage settings</h2>
+        <p className="text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed">Please sign in to access and update your account preferences.</p>
       </div>
       <div className="flex gap-4.5 w-full mt-3">
         <button onClick={() => router.push('/login')} className="flex-1 py-2.5 bg-[#3b59df] text-white rounded-xl font-bold hover:bg-[#2c45b8] transition-colors">Sign In</button>
-        <button onClick={() => router.push('/register')} className="flex-1 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-colors">Create Account</button>
+        <button onClick={() => router.push('/register')} className="flex-1 py-2.5 bg-white dark:bg-[#121629] border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 rounded-xl font-bold hover:bg-slate-50 dark:hover:bg-[#1a1f33] transition-colors">Create Account</button>
       </div>
     </div>
   );
@@ -200,12 +200,12 @@ export default function Settings() {
       </AnimatePresence>
 
       <div className="flex items-center gap-3 mb-8">
-        <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center border border-slate-200 shadow-sm">
-          <SettingsIcon className="text-slate-600" size={24} />
+        <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-white/5 flex items-center justify-center border border-slate-200 dark:border-white/10 shadow-sm">
+          <SettingsIcon className="text-slate-600 dark:text-slate-400" size={24} />
         </div>
         <div>
-          <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">Settings</h1>
-          <p className="text-slate-500 font-medium mt-1 text-sm">Manage your account preferences and configurations.</p>
+          <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">Settings</h1>
+          <p className="text-slate-500 dark:text-slate-400 font-medium mt-1 text-sm">Manage your account preferences and configurations.</p>
         </div>
       </div>
 
@@ -224,15 +224,15 @@ export default function Settings() {
             
             {/* PROFILE TAB */}
             {activeTab === 'profile' && (
-              <motion.div key="profile" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm">
-                <h2 className="text-xl font-bold text-slate-900 mb-6">Profile Information</h2>
+              <motion.div key="profile" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="bg-white dark:bg-[#121629] rounded-3xl p-8 border border-slate-200 dark:border-white/5 shadow-sm">
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Profile Information</h2>
                 <div className="space-y-6">
-                  <div className="flex items-center gap-6 pb-6 border-b border-slate-100">
-                    <div className="w-20 h-20 rounded-full bg-indigo-100 flex items-center justify-center text-3xl text-indigo-600 font-bold shadow-sm border border-indigo-200">
+                  <div className="flex items-center gap-6 pb-6 border-b border-slate-100 dark:border-white/5">
+                    <div className="w-20 h-20 rounded-full bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-3xl text-indigo-600 dark:text-indigo-400 font-bold shadow-sm border border-indigo-200 dark:border-indigo-500/30">
                       {user?.email?.[0]?.toUpperCase() || 'U'}
                     </div>
                     <div>
-                      <button className="px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-bold rounded-xl transition-colors shadow-sm">
+                      <button className="px-4 py-2.5 bg-white dark:bg-[#1a1f33] border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-[#252b43] text-slate-700 dark:text-slate-300 text-sm font-bold rounded-xl transition-colors shadow-sm">
                         Change Avatar
                       </button>
                     </div>
@@ -240,16 +240,16 @@ export default function Settings() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <label className="text-sm font-bold text-slate-700">Full Name</label>
-                      <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-medium focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all shadow-sm" />
+                      <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Full Name</label>
+                      <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} className="w-full bg-slate-50 dark:bg-[#1a1f33] border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-800 dark:text-slate-200 font-medium focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all shadow-sm" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-bold text-slate-700">Email Address</label>
-                      <input type="email" value={user?.email || ''} disabled className="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-slate-500 font-medium cursor-not-allowed shadow-sm" />
+                      <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Email Address</label>
+                      <input type="email" value={user?.email || ''} disabled className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-500 dark:text-slate-500 font-medium cursor-not-allowed shadow-sm" />
                     </div>
                     <div className="space-y-2 md:col-span-2">
-                      <label className="text-sm font-bold text-slate-700">Target Role</label>
-                      <input type="text" value={targetRole} onChange={(e) => setTargetRole(e.target.value)} placeholder="e.g. Senior Frontend Developer" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-medium focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all shadow-sm" />
+                      <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Target Role</label>
+                      <input type="text" value={targetRole} onChange={(e) => setTargetRole(e.target.value)} placeholder="e.g. Senior Frontend Developer" className="w-full bg-slate-50 dark:bg-[#1a1f33] border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-800 dark:text-slate-200 font-medium focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all shadow-sm" />
                     </div>
                   </div>
 
@@ -264,16 +264,16 @@ export default function Settings() {
 
             {/* PASSWORD TAB */}
             {activeTab === 'password' && (
-              <motion.div key="password" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm">
-                <h2 className="text-xl font-bold text-slate-900 mb-6">Security Settings</h2>
+              <motion.div key="password" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="bg-white dark:bg-[#121629] rounded-3xl p-8 border border-slate-200 dark:border-white/5 shadow-sm">
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Security Settings</h2>
                 <div className="space-y-6 max-w-md">
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-slate-700">New Password</label>
-                    <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-medium focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all shadow-sm" />
+                    <label className="text-sm font-bold text-slate-700 dark:text-slate-300">New Password</label>
+                    <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full bg-slate-50 dark:bg-[#1a1f33] border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-800 dark:text-slate-200 font-medium focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all shadow-sm" />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-slate-700">Confirm New Password</label>
-                    <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-medium focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all shadow-sm" />
+                    <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Confirm New Password</label>
+                    <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full bg-slate-50 dark:bg-[#1a1f33] border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-800 dark:text-slate-200 font-medium focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all shadow-sm" />
                   </div>
 
                   <div className="pt-4">
@@ -287,8 +287,8 @@ export default function Settings() {
 
             {/* NOTIFICATIONS TAB */}
             {activeTab === 'notifications' && (
-              <motion.div key="notifications" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm">
-                <h2 className="text-xl font-bold text-slate-900 mb-6">Notification Preferences</h2>
+              <motion.div key="notifications" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="bg-white dark:bg-[#121629] rounded-3xl p-8 border border-slate-200 dark:border-white/5 shadow-sm">
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Notification Preferences</h2>
                 <div className="space-y-4 max-w-xl">
                   <ToggleSwitch 
                     label="Email Alerts" 
@@ -314,8 +314,8 @@ export default function Settings() {
 
             {/* PRIVACY TAB */}
             {activeTab === 'privacy' && (
-              <motion.div key="privacy" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm">
-                <h2 className="text-xl font-bold text-slate-900 mb-6">Privacy & Data Settings</h2>
+              <motion.div key="privacy" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="bg-white dark:bg-[#121629] rounded-3xl p-8 border border-slate-200 dark:border-white/5 shadow-sm">
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Privacy & Data Settings</h2>
                 <div className="space-y-4 max-w-xl">
                   <ToggleSwitch 
                     label="Share Analytics" 

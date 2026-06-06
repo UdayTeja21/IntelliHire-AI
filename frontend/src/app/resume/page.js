@@ -27,6 +27,7 @@ import ScoreOverview from '../../components/resume/ScoreOverview';
 import SectionAnalysis from '../../components/resume/SectionAnalysis';
 import SkillAnalysis from '../../components/resume/SkillAnalysis';
 import { useAuth } from '../../context/AuthContext';
+import { useNotification } from '../../context/NotificationContext';
 import api from '../../lib/api';
 
 const ROLES = ['Software Engineer','Frontend Developer','Backend Developer','Full Stack Developer','Data Scientist','AI/ML Engineer','DevOps Engineer','Product Manager','UI/UX Designer','Data Analyst'];
@@ -110,8 +111,9 @@ const ATSGraphic = () => (
 );
 
 export default function ResumeAnalyzer() {
-  const { user } = useAuth();
   const router = useRouter();
+  const { user } = useAuth();
+  const { addNotification } = useNotification();
   const fileInputRef = useRef(null);
   const debounceRef = useRef(null);
 
@@ -125,7 +127,10 @@ export default function ResumeAnalyzer() {
   const [scanStage, setScanStage] = useState('');
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState(0);
+  
+  // Track previous score for improvement notifications
+  const prevScoreRef = useRef(null);
+  
   const [lastUpdated, setLastUpdated] = useState('');
   const [localStats, setLocalStats] = useState({ words: 0, keywords: 0, totalKeywords: 0 });
 
@@ -283,6 +288,24 @@ export default function ResumeAnalyzer() {
       if (mode === 'file' && fileObj) fd.append('file', fileObj);
       else fd.append('resume_text', text);
       const res = await api.post('/resume/analyze', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      
+      const newScore = res.data?.overall_score || 0;
+      if (prevScoreRef.current !== null && newScore > prevScoreRef.current) {
+        const diff = newScore - prevScoreRef.current;
+        addNotification({
+          title: 'Improvement Detected! 🚀',
+          message: `Great job! Your resume score improved by ${diff} point${diff > 1 ? 's' : ''}.`,
+          type: 'success'
+        });
+      } else {
+        addNotification({
+          title: 'Resume Analysis Complete 📄',
+          message: 'We have finished analyzing your resume.',
+          type: 'success'
+        });
+      }
+      
+      prevScoreRef.current = newScore;
       setResult(res.data);
       setLastUpdated(new Date().toLocaleTimeString());
     } catch (err) {
@@ -305,16 +328,16 @@ export default function ResumeAnalyzer() {
 
   if (!user) return (
     <div className="min-h-[75vh] flex flex-col items-center justify-center gap-6 text-center max-w-md mx-auto fade-in">
-      <div className="w-16 h-16 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shadow-md animate-float">
+      <div className="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shadow-md animate-float">
         <FileText size={32} />
       </div>
       <div className="space-y-2">
-        <h2 className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 font-sans">Sign in to analyze your resume</h2>
-        <p className="text-sm text-slate-500 font-medium leading-relaxed">Get enterprise-grade AI resume intelligence powered by Gemini.</p>
+        <h2 className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 font-sans">Sign in to analyze your resume</h2>
+        <p className="text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed">Get enterprise-grade AI resume intelligence powered by Gemini.</p>
       </div>
       <div className="flex gap-4.5 w-full mt-3">
         <button onClick={() => router.push('/login')} className="flex-1 py-2.5 bg-[#3b59df] text-white rounded-xl font-bold hover:bg-[#2c45b8] transition-colors">Sign In</button>
-        <button onClick={() => router.push('/register')} className="flex-1 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-colors">Create Account</button>
+        <button onClick={() => router.push('/register')} className="flex-1 py-2.5 bg-white dark:bg-[#121629] border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 rounded-xl font-bold hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">Create Account</button>
       </div>
     </div>
   );
@@ -323,17 +346,17 @@ export default function ResumeAnalyzer() {
     <div className="py-6 space-y-6 fade-in max-w-7xl mx-auto">
       
       {/* ─── Premium Header Banner ─── */}
-      <div className="bg-gradient-to-br from-indigo-50 to-purple-50 p-8 md:p-10 border border-indigo-100 shadow-sm relative flex flex-col md:flex-row items-center justify-between gap-8 overflow-hidden rounded-[2.5rem]">
+      <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-[#121629] dark:via-[#151a2b] dark:to-[#0b0f19] p-6 md:p-10 border border-indigo-100 dark:border-[#1a1f33] shadow-sm relative flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden rounded-3xl md:rounded-[2.5rem]">
         
         <div className="flex-1 space-y-3 text-center md:text-left relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 font-extrabold text-[10px] uppercase tracking-widest shadow-sm">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 font-extrabold text-[10px] uppercase tracking-widest shadow-sm">
             <Sparkles size={12} className="animate-spin-slow" /> AI-Powered
           </div>
           
-          <h1 className="text-3xl md:text-4xl font-black tracking-tight text-slate-900 leading-tight font-sans">
-            AI <span className="text-[#3b59df]">Resume Analyzer</span>
+          <h1 className="text-3xl md:text-4xl font-black tracking-tight text-slate-900 dark:text-white leading-tight font-sans">
+            AI <span className="text-[#3b59df] dark:text-indigo-400">Resume Analyzer</span>
           </h1>
-          <p className="text-slate-600 max-w-xl text-sm font-medium leading-relaxed">
+          <p className="text-slate-600 dark:text-slate-400 max-w-xl text-sm font-medium leading-relaxed">
             Deep line-by-line analysis. Real-time ATS scoring. Recruiter simulation. Powered by Gemini AI.
           </p>
         </div>
@@ -349,22 +372,22 @@ export default function ResumeAnalyzer() {
         <div className="lg:col-span-1 space-y-6">
           
           {/* Target Role selection (Step 1) */}
-          <div className="bg-white p-6 border border-slate-200 shadow-sm relative rounded-[1.5rem]">
+          <div className="bg-white dark:bg-[#121629] p-5 md:p-6 border border-slate-200 dark:border-white/5 shadow-sm relative rounded-3xl md:rounded-[1.5rem]">
             <div className="flex items-center gap-2.5 mb-3">
               <span className="w-5 h-5 rounded-full bg-[#3b59df] text-white font-extrabold text-[10px] flex items-center justify-center shrink-0 shadow-sm">
                 1
               </span>
-              <h3 className="text-sm font-extrabold text-slate-800 tracking-wide flex items-center gap-2 font-sans">
-                <Briefcase size={14} className="text-[#3b59df]" /> Target Job Role
+              <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-200 tracking-wide flex items-center gap-2 font-sans">
+                <Briefcase size={14} className="text-[#3b59df] dark:text-indigo-400" /> Target Job Role
               </h3>
             </div>
             
             <div className="relative flex items-center">
-              <Briefcase className="absolute left-4 text-slate-400" size={15} />
+              <Briefcase className="absolute left-4 text-slate-400 dark:text-slate-500" size={15} />
               <select
                 value={targetRole}
                 onChange={e => setTargetRole(e.target.value)}
-                className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#3b59df]/20 focus:border-[#3b59df] transition-all appearance-none cursor-pointer"
+                className="w-full pl-10 pr-10 py-2.5 bg-slate-50 dark:bg-[#1a1f33] border border-slate-200 dark:border-white/10 rounded-xl text-slate-800 dark:text-slate-200 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#3b59df]/20 focus:border-[#3b59df] transition-all appearance-none cursor-pointer"
               >
                 {ROLES.map(r => (
                   <option key={r} value={r}>{r}</option>
@@ -375,22 +398,22 @@ export default function ResumeAnalyzer() {
           </div>
 
           {/* Experience Level selection (Step 2) */}
-          <div className="bg-white p-6 border border-slate-200 shadow-sm relative rounded-[1.5rem]">
+          <div className="bg-white dark:bg-[#121629] p-5 md:p-6 border border-slate-200 dark:border-white/5 shadow-sm relative rounded-3xl md:rounded-[1.5rem]">
             <div className="flex items-center gap-2.5 mb-3">
               <span className="w-5 h-5 rounded-full bg-[#3b59df] text-white font-extrabold text-[10px] flex items-center justify-center shrink-0 shadow-sm">
                 2
               </span>
-              <h3 className="text-sm font-extrabold text-slate-800 tracking-wide flex items-center gap-2 font-sans">
-                <User size={14} className="text-[#3b59df]" /> Experience Level
+              <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-200 tracking-wide flex items-center gap-2 font-sans">
+                <User size={14} className="text-[#3b59df] dark:text-indigo-400" /> Experience Level
               </h3>
             </div>
             
             <div className="relative flex items-center">
-              <User className="absolute left-4 text-slate-400" size={15} />
+              <User className="absolute left-4 text-slate-400 dark:text-slate-500" size={15} />
               <select
                 value={experienceLevel}
                 onChange={e => setExperienceLevel(e.target.value)}
-                className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#3b59df]/20 focus:border-[#3b59df] transition-all appearance-none cursor-pointer"
+                className="w-full pl-10 pr-10 py-2.5 bg-slate-50 dark:bg-[#1a1f33] border border-slate-200 dark:border-white/10 rounded-xl text-slate-800 dark:text-slate-200 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#3b59df]/20 focus:border-[#3b59df] transition-all appearance-none cursor-pointer"
               >
                 {['Fresher (0-1 years)', 'Junior (1-3 years)', 'Mid-Level (3-5 years)', 'Senior (5+ years)'].map(r => (
                   <option key={r} value={r}>{r}</option>
@@ -401,18 +424,18 @@ export default function ResumeAnalyzer() {
           </div>
 
           {/* Upload Resume Container (Step 3) */}
-          <div className="bg-white p-6 border border-slate-200 shadow-sm relative rounded-[1.5rem]">
+          <div className="bg-white dark:bg-[#121629] p-5 md:p-6 border border-slate-200 dark:border-white/5 shadow-sm relative rounded-3xl md:rounded-[1.5rem]">
             <div className="flex items-center gap-2.5 mb-3">
               <span className="w-5 h-5 rounded-full bg-[#3b59df] text-white font-extrabold text-[10px] flex items-center justify-center shrink-0 shadow-sm">
                 3
               </span>
-              <h3 className="text-sm font-extrabold text-slate-800 tracking-wide flex items-center gap-2 font-sans">
-                <FileText size={14} className="text-[#3b59df]" /> Upload Resume
+              <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-200 tracking-wide flex items-center gap-2 font-sans">
+                <FileText size={14} className="text-[#3b59df] dark:text-indigo-400" /> Upload Resume
               </h3>
             </div>
 
             {/* Paste/Upload Tabs Toggle */}
-            <div className="flex gap-1 bg-slate-100 p-1.5 rounded-xl border border-slate-200 mb-4">
+            <div className="flex gap-1 bg-slate-100 dark:bg-[#1a1f33] p-1.5 rounded-xl border border-slate-200 dark:border-white/5 mb-4">
               {[
                 { label: '✏️ Paste Text', mode: 'text' },
                 { label: '📎 Upload File', mode: 'file' }
@@ -422,8 +445,8 @@ export default function ResumeAnalyzer() {
                   onClick={() => setInputMode(tab.mode)}
                   className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold cursor-pointer transition-all duration-300 ${
                     inputMode === tab.mode 
-                      ? 'bg-white text-slate-800 shadow-sm border border-slate-200' 
-                      : 'text-slate-500 hover:text-slate-700'
+                      ? 'bg-white dark:bg-[#252b43] text-slate-800 dark:text-white shadow-sm border border-slate-200 dark:border-white/10' 
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                   }`}
                 >
                   {tab.label}
@@ -434,11 +457,11 @@ export default function ResumeAnalyzer() {
             {/* Paste mode layout */}
             {inputMode === 'text' ? (
               <div className="space-y-3">
-                <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                <div className="relative overflow-hidden rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#1a1f33]">
                   <textarea 
                     value={resumeText} 
                     onChange={e => setResumeText(e.target.value)}
-                    className="w-full bg-transparent p-3 text-[11px] text-slate-700 font-mono leading-relaxed outline-none min-h-[160px] resize-y"
+                    className="w-full bg-transparent p-3 text-[11px] text-slate-700 dark:text-slate-300 font-mono leading-relaxed outline-none min-h-[160px] resize-y"
                     placeholder="Paste your complete resume here... Make sure to include all sections for accurate analysis." 
                   />
                   
@@ -452,24 +475,24 @@ export default function ResumeAnalyzer() {
                   )}
 
                   {/* Character trackers */}
-                  <div className="flex items-center gap-3 px-3 py-1.5 border-t border-slate-200 bg-slate-100 text-[9px] text-slate-600 font-semibold font-sans">
-                    <div>Words: <span className="text-slate-800 font-extrabold">{localStats.words}</span></div>
-                    <div>Keywords: <span className="text-[#3b59df] font-extrabold">{localStats.keywords}/{localStats.totalKeywords}</span></div>
+                  <div className="flex items-center gap-3 px-3 py-1.5 border-t border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-[9px] text-slate-600 dark:text-slate-400 font-semibold font-sans">
+                    <div>Words: <span className="text-slate-800 dark:text-slate-200 font-extrabold">{localStats.words}</span></div>
+                    <div>Keywords: <span className="text-[#3b59df] dark:text-indigo-400 font-extrabold">{localStats.keywords}/{localStats.totalKeywords}</span></div>
                     <div className="ml-auto">{resumeText.length} / 20,000</div>
                   </div>
                 </div>
 
                 {resumeText.length >= 100 && (
-                  <div className="p-2.5 rounded-xl border flex items-center gap-2 bg-indigo-50 border-indigo-100">
+                  <div className="p-2.5 rounded-xl border flex items-center gap-2 bg-indigo-50 dark:bg-indigo-500/10 border-indigo-100 dark:border-indigo-500/20">
                     {isAnalyzing ? (
                       <>
-                        <RefreshCw size={11} className="text-indigo-600 animate-spin" />
-                        <span className="text-[11px] font-bold text-indigo-600 leading-none">{scanStage}</span>
+                        <RefreshCw size={11} className="text-indigo-600 dark:text-indigo-400 animate-spin" />
+                        <span className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 leading-none">{scanStage}</span>
                       </>
                     ) : (
                       <>
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-sm" />
-                        <span className="text-[11px] font-bold text-emerald-600 leading-none">
+                        <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 leading-none">
                           {lastUpdated ? `Updated at ${lastUpdated}` : 'Ready to analyze'}
                         </span>
                       </>
@@ -484,7 +507,7 @@ export default function ResumeAnalyzer() {
                   className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-extrabold text-xs transition-all shadow-sm ${
                     resumeText.length >= 100 
                       ? 'bg-[#3b59df] hover:bg-[#2c45b8] text-white cursor-pointer'
-                      : 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
+                      : 'bg-slate-100 dark:bg-[#1a1f33] text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-200 dark:border-white/5'
                   }`}
                 >
                   <Sparkles size={14} /> Analyze Resume
@@ -500,10 +523,10 @@ export default function ResumeAnalyzer() {
                   onClick={() => fileInputRef.current?.click()}
                   className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all ${
                     isDragging 
-                      ? 'border-indigo-400 bg-indigo-50' 
+                      ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-500/10' 
                       : file 
-                        ? 'border-emerald-300 bg-emerald-50' 
-                        : 'border-slate-300 hover:border-indigo-400 hover:bg-slate-50 bg-white'
+                        ? 'border-emerald-300 bg-emerald-50 dark:bg-emerald-500/10' 
+                        : 'border-slate-300 dark:border-white/10 hover:border-indigo-400 dark:hover:border-indigo-500 hover:bg-slate-50 dark:hover:bg-[#1a1f33] bg-white dark:bg-[#121629]'
                   }`}
                 >
                   <input ref={fileInputRef} type="file" accept=".pdf,.txt" style={{ display: 'none' }} onChange={e => { const f = e.target.files[0]; if (f) { setFile(f); setError(''); } }} />
@@ -512,11 +535,11 @@ export default function ResumeAnalyzer() {
                     <div className="flex flex-col items-center gap-3">
                       <FileText size={42} className="text-emerald-500" />
                       <div>
-                        <p className="text-xs font-extrabold text-slate-800 truncate max-w-[200px]">{file.name}</p>
-                        <p className="text-[10px] text-slate-500 font-bold mt-0.5">{(file.size / 1024).toFixed(1)} KB</p>
+                        <p className="text-xs font-extrabold text-slate-800 dark:text-slate-200 truncate max-w-[200px]">{file.name}</p>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold mt-0.5">{(file.size / 1024).toFixed(1)} KB</p>
                       </div>
                       
-                      {isAnalyzing && <div className="text-xs font-bold text-indigo-600 animate-pulse mt-2">{scanStage}</div>}
+                      {isAnalyzing && <div className="text-xs font-bold text-indigo-600 dark:text-indigo-400 animate-pulse mt-2">{scanStage}</div>}
                       
                       <button 
                         onClick={e => { e.stopPropagation(); setFile(null); setResult(null); }} 
@@ -527,14 +550,14 @@ export default function ResumeAnalyzer() {
                     </div>
                   ) : (
                     <div className="flex flex-col items-center gap-3.5">
-                      <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 border border-slate-200">
+                      <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-[#1a1f33] flex items-center justify-center text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/5">
                         <FilePlus size={22} />
                       </div>
                       <div>
-                        <p className="text-xs font-extrabold text-slate-800">Drag & drop PDF / TXT</p>
-                        <p className="text-[10px] text-slate-500 font-bold mt-1">Auto-scans immediately on upload</p>
+                        <p className="text-xs font-extrabold text-slate-800 dark:text-slate-200">Drag & drop PDF / TXT</p>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold mt-1">Auto-scans immediately on upload</p>
                       </div>
-                      <div className="px-4 py-2 mt-2 text-xs font-bold text-indigo-600 border border-indigo-200 bg-indigo-50 rounded-xl hover:bg-indigo-100">
+                      <div className="px-4 py-2 mt-2 text-xs font-bold text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20 bg-indigo-50 dark:bg-indigo-500/10 rounded-xl hover:bg-indigo-100 dark:hover:bg-indigo-500/20">
                         Browse Files
                       </div>
                     </div>
@@ -544,12 +567,12 @@ export default function ResumeAnalyzer() {
             )}
           </div>
 
-          {error && <div className="p-4 rounded-xl border border-red-200 bg-red-50 text-red-600 text-xs font-semibold leading-relaxed">⚠️ {error}</div>}
+          {error && <div className="p-4 rounded-xl border border-red-200 dark:border-red-500/20 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 text-xs font-semibold leading-relaxed">⚠️ {error}</div>}
 
           {result && (
             <button 
               onClick={() => { setResult(null); setResumeText(''); setFile(null); setLastUpdated(''); }} 
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-slate-200 hover:bg-slate-50 bg-white text-xs font-bold text-slate-600 cursor-pointer transition-colors shadow-sm"
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5 bg-white dark:bg-[#121629] text-xs font-bold text-slate-600 dark:text-slate-400 cursor-pointer transition-colors shadow-sm"
             >
               <RefreshCw size={13} /> Clear & Restart
             </button>
@@ -567,20 +590,20 @@ export default function ResumeAnalyzer() {
                 initial={{ opacity: 0 }} 
                 animate={{ opacity: 1 }} 
                 exit={{ opacity: 0 }}
-                className="bg-white p-12 border border-slate-200 rounded-3xl shadow-sm flex flex-col items-center justify-center gap-8 min-h-[500px]"
+                className="bg-white dark:bg-[#121629] p-12 border border-slate-200 dark:border-white/5 rounded-3xl shadow-sm flex flex-col items-center justify-center gap-8 min-h-[500px]"
               >
                 <div className="relative">
                   {/* Rotating loader ring */}
-                  <div className="w-20 h-20 rounded-full border-4 border-indigo-100 border-t-indigo-600 border-r-purple-500 animate-spin" />
+                  <div className="w-20 h-20 rounded-full border-4 border-indigo-100 dark:border-indigo-900 border-t-indigo-600 border-r-purple-500 animate-spin" />
                   <div className="absolute inset-0 flex items-center justify-center text-3xl select-none">🧠</div>
                 </div>
 
                 <div className="text-center space-y-3 max-w-sm">
-                  <h3 className="text-xl font-extrabold text-slate-900 font-sans">Deep AI Analysis Running</h3>
-                  <p className="text-sm font-bold text-indigo-600 animate-pulse">{scanStage}</p>
+                  <h3 className="text-xl font-extrabold text-slate-900 dark:text-white font-sans">Deep AI Analysis Running</h3>
+                  <p className="text-sm font-bold text-indigo-600 dark:text-indigo-400 animate-pulse">{scanStage}</p>
                   
                   {/* Glowing progress line */}
-                  <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden relative">
+                  <div className="h-1.5 w-full bg-slate-100 dark:bg-[#1a1f33] rounded-full overflow-hidden relative">
                     <motion.div 
                       className="h-full bg-indigo-500"
                       initial={{ width: '0%' }}
@@ -588,7 +611,7 @@ export default function ResumeAnalyzer() {
                       transition={{ duration: 12, ease: "linear" }}
                     />
                   </div>
-                  <p className="text-xs text-slate-500 font-medium">Analyzing for target role: {targetRole}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Analyzing for target role: {targetRole}</p>
                 </div>
 
                 {/* Sub-stages indicators */}
@@ -601,7 +624,7 @@ export default function ResumeAnalyzer() {
                     'ATS engine',
                     'Recruiter simulation'
                   ].map((s) => (
-                    <span key={s} className="px-3 py-1.5 rounded-xl border border-indigo-200 bg-indigo-50 text-[10px] font-bold text-indigo-600">
+                    <span key={s} className="px-3 py-1.5 rounded-xl border border-indigo-200 dark:border-indigo-500/20 bg-indigo-50 dark:bg-indigo-500/10 text-[10px] font-bold text-indigo-600 dark:text-indigo-400">
                       ⚙️ {s}
                     </span>
                   ))}
@@ -616,16 +639,16 @@ export default function ResumeAnalyzer() {
                 initial={{ opacity: 0 }} 
                 animate={{ opacity: 1 }} 
                 exit={{ opacity: 0 }}
-                className="bg-white p-6 md:p-8 border border-slate-200 rounded-3xl shadow-sm flex flex-col items-center justify-center gap-6 min-h-[420px]"
+                className="bg-white dark:bg-[#121629] p-6 md:p-8 border border-slate-200 dark:border-white/5 rounded-3xl shadow-sm flex flex-col items-center justify-center gap-6 min-h-[420px]"
               >
                 {/* Visual anchor logo */}
-                <div className="w-16 h-16 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 text-2xl shadow-sm">
+                <div className="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 text-2xl shadow-sm">
                   <BarChart2 size={32} />
                 </div>
                 
                 <div className="text-center space-y-4 max-w-sm">
-                  <h3 className="text-2xl font-extrabold text-slate-900 font-sans">Ready to Analyze</h3>
-                  <p className="text-sm text-slate-500 font-medium leading-relaxed">
+                  <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white font-sans">Ready to Analyze</h3>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
                     Paste your resume text or upload a PDF on the left panel to begin. Our AI will instantly scan your resume against your selected target role and provide actionable insights.
                   </p>
                 </div>
@@ -645,7 +668,7 @@ export default function ResumeAnalyzer() {
                       className={`px-5 py-2.5 rounded-xl text-sm font-bold cursor-pointer transition-all duration-300 shrink-0 ${
                         activeTab === i 
                           ? 'bg-[#3b59df] text-white shadow-sm' 
-                          : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                          : 'bg-white dark:bg-[#121629] border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5'
                       }`}
                     >
                       {tab}
@@ -655,20 +678,20 @@ export default function ResumeAnalyzer() {
                   {/* Download button */}
                   <button 
                     onClick={downloadReport} 
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold cursor-pointer border bg-indigo-50 border-indigo-200 hover:bg-indigo-100 text-indigo-700 shrink-0 transition-colors ml-auto shadow-sm"
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold cursor-pointer border bg-indigo-50 dark:bg-indigo-500/10 border-indigo-200 dark:border-indigo-500/20 hover:bg-indigo-100 dark:hover:bg-indigo-500/30 text-indigo-700 dark:text-indigo-400 shrink-0 transition-colors ml-auto shadow-sm"
                   >
                     <Download size={15} /> Download Report
                   </button>
 
                   {isAnalyzing && (
-                    <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-50 border border-indigo-200 text-sm font-bold text-indigo-600 shrink-0 select-none">
+                    <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 text-sm font-bold text-indigo-600 dark:text-indigo-400 shrink-0 select-none">
                       <RefreshCw size={14} className="animate-spin" /> Re-analyzing...
                     </div>
                   )}
                 </div>
 
                 {/* Sub panels contents display */}
-                <div className="bg-white p-8 border border-slate-200 shadow-sm relative rounded-[1.5rem] min-h-[500px]">
+                <div className="bg-white dark:bg-[#121629] p-8 border border-slate-200 dark:border-white/5 shadow-sm relative rounded-[1.5rem] min-h-[500px]">
                   <AnimatePresence mode="wait">
                     {activeTab === 0 && <motion.div key="t0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><ScoreOverview data={result} /></motion.div>}
                     {activeTab === 1 && <motion.div key="t1" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><SectionAnalysis data={result} /></motion.div>}
