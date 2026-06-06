@@ -127,6 +127,7 @@ export default function ResumeAnalyzer() {
   const [scanStage, setScanStage] = useState('');
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState(0);
   
   // Track previous score for improvement notifications
   const prevScoreRef = useRef(null);

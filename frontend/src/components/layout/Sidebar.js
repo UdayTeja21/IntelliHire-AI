@@ -1,6 +1,6 @@
 "use client";
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useSidebar } from '../../context/SidebarContext';
@@ -19,6 +19,7 @@ import {
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, logout } = useAuth();
   const { isMobileOpen, isCollapsed, closeSidebar } = useSidebar();
   const [isHovered, setIsHovered] = useState(false);
@@ -53,14 +54,14 @@ export default function Sidebar() {
       >
         {/* Logo Area */}
         <div className={`px-6 py-6 mb-2 flex items-center ${effectivelyCollapsed ? 'justify-center px-0' : 'justify-between'}`}>
-          <div className="flex items-center gap-3">
+          <button onClick={() => { closeSidebar(); router.push('/'); }} className="flex items-center gap-3 hover:opacity-90 transition-opacity text-left bg-transparent border-none p-0 cursor-pointer">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center shadow-sm shrink-0">
               <Hexagon size={18} className="text-white" fill="currentColor" />
             </div>
             {!effectivelyCollapsed && (
               <span className="text-white font-bold text-lg tracking-wide transition-opacity duration-300">IntelliHire</span>
             )}
-          </div>
+          </button>
           {!effectivelyCollapsed && (
             <button 
               onClick={closeSidebar}
